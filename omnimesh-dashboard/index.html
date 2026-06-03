@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>OmniMesh Core — AI System</title>
+  <meta name="description" content="OmniMesh Core: Distributed sovereign AI assistant — JARVIS-class interface.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan:        #00d4ff;
+      --cyan-dim:    rgba(0,212,255,0.10);
+      --cyan-glow:   rgba(0,212,255,0.30);
+      --cyan-border: rgba(0,212,255,0.22);
+      --blue:        #0057ff;
+      --orange:      #ff6a00;
+      --red:         #ff2d55;
+      --green:       #00ff9f;
+      --green-dim:   rgba(0,255,159,0.15);
+      --bg:          #020a12;
+      --bg2:         #040e18;
+      --text:        #b8d9f5;
+      --text-bright: #e0f2ff;
+      --muted:       rgba(100,180,255,0.35);
+      --border:      rgba(0,212,255,0.18);
+      --font-hud:    'Share Tech Mono', monospace;
+      --font-title:  'Orbitron', sans-serif;
+      --font-body:   'Rajdhani', sans-serif;
+    }
+
+    html { font-size: 16px; }
+    html, body {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED GRID CANVAS ── */
+    #grid-canvas {
+      position: fixed; inset: 0;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* ── SCAN LINE OVERLAY ── */
+    #scanlines {
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,212,255,0.012) 3px, rgba(0,212,255,0.012) 4px
+      );
+      pointer-events: none; z-index: 2;
+    }
+
+    /* ── HORIZONTAL SWEEP ── */
+    #sweep {
+      position: fixed; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--cyan) 50%, transparent 100%);
+      opacity: 0; pointer-events: none; z-index: 3;
+      animation: sweepDown 7s ease-in-out infinite;
+    }
+    @keyframes sweepDown {
+      0%   { top: 0;     opacity: 0; }
+      3%   { opacity: 0.3; }
+      97%  { opacity: 0.3; }
+      100% { top: 100vh; opacity: 0; }
+    }
+
+    /* ── VIGNETTE ── */
+    #vignette {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(2,10,18,0.75) 100%);
+      pointer-events: none; z-index: 4;
+    }
+
+    /* ── ROOT SCROLL ── */
+    #root {
+      position: relative; z-index: 10;
+      width: 100%;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 2px; }
+
+    /* ────────────────────────────────
+       REUSABLE HUD PANEL
+    ──────────────────────────────── */
+    .hud-panel {
+      position: relative;
+      background: rgba(0,20,40,0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+    .hud-panel::before, .hud-panel::after,
+    .hud-panel .hud-br::before, .hud-panel .hud-br::after {
+      content: ''; position: absolute;
+      width: 12px; height: 12px;
+      border-color: var(--cyan); border-style: solid;
+    }
+    .hud-panel::before  { top:-1px;  left:-1px;  border-width: 2px 0 0 2px; }
+    .hud-panel::after   { top:-1px;  right:-1px; border-width: 2px 2px 0 0; }
+    .hud-panel .hud-br::before { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
+    .hud-panel .hud-br::after  { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
+
+    /* ────────────────────────────────
+       ANIMATIONS
+    ──────────────────────────────── */
+    @keyframes rotCW  { to { transform: rotate(360deg);  } }
+    @keyframes rotCCW { to { transform: rotate(-360deg); } }
+    @keyframes pulseOpacity { 0%,100%{opacity:0.6} 50%{opacity:1} }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 8px var(--cyan-glow); }
+      50%      { box-shadow: 0 0 22px var(--cyan-glow), 0 0 50px rgba(0,212,255,0.08); }
+    }
+    @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes thinking { 0%,80%,100%{transform:scale(0.4);opacity:0.2} 40%{transform:scale(1);opacity:1} }
+    @keyframes wave     { 0%,100%{transform:scaleY(0.25)} 50%{transform:scaleY(1)} }
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes pingRing {
+      0%  { transform: scale(1); opacity: 0.7; }
+      100%{ transform: scale(2.4); opacity: 0; }
+    }
+    @keyframes slideLeft { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes glitch {
+      0%,89%,100%{ clip-path: none; transform: none; }
+      90%{ clip-path: inset(20% 0 60% 0); transform: translate(-2px); }
+      91%{ clip-path: inset(70% 0 5% 0);  transform: translate(2px); }
+      92%{ clip-path: none; transform: none; }
+      95%{ clip-path: inset(40% 0 40% 0); transform: translate(-1px); }
+      96%{ clip-path: none; }
+    }
+    @keyframes neonBorder {
+      0%,100%{ border-color: rgba(0,212,255,0.18); }
+      50%     { border-color: rgba(0,212,255,0.45); }
+    }
+
+    /* ────────────────────────────────
+       GLOBAL INPUT STYLES
+    ──────────────────────────────── */
+    textarea, input {
+      background: rgba(0,212,255,0.04);
+      color: var(--text-bright);
+      border: 1px solid var(--border);
+      outline: none;
+      font-family: var(--font-hud);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    textarea::placeholder, input::placeholder { color: rgba(0,212,255,0.25); }
+    textarea:focus, input:focus {
+      border-color: rgba(0,212,255,0.55);
+      box-shadow: 0 0 0 2px rgba(0,212,255,0.08), 0 0 16px rgba(0,212,255,0.1);
+    }
+    textarea { resize: none; }
+
+    button { cursor: pointer; border: none; background: none; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ────────────────────────────────
+       UTILITY CLASSES
+    ──────────────────────────────── */
+    .hud-label {
+      font-family: var(--font-hud);
+      font-size: clamp(8px, 1.5vw, 10px);
+      letter-spacing: 0.14em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+    .hud-title {
+      font-family: var(--font-title);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .anim-fade-up    { animation: fadeUp 0.4s ease forwards; }
+    .anim-slide-left { animation: slideLeft 0.35s ease forwards; }
+
+    /* ────────────────────────────────
+       NODE STATUS DOT
+    ──────────────────────────────── */
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulseOpacity 2s ease-in-out infinite;
+    }
+    .status-dot.idle { background: rgba(0,212,255,0.2); }
+
+    /* ────────────────────────────────
+       SEND BUTTON
+    ──────────────────────────────── */
+    .send-btn {
+      background: linear-gradient(135deg, #00aaff, #0057ff);
+      color: #fff;
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      border: 1px solid rgba(0,180,255,0.4);
+      transition: all 0.2s ease;
+    }
+    .send-btn:hover:not(:disabled) {
+      box-shadow: 0 0 20px rgba(0,170,255,0.4), 0 0 40px rgba(0,170,255,0.1);
+      border-color: rgba(0,212,255,0.8);
+    }
+    .send-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* ────────────────────────────────
+       MIC BUTTON
+    ──────────────────────────────── */
+    .mic-btn {
+      border: 1px solid var(--border);
+      color: var(--cyan);
+      background: var(--cyan-dim);
+      transition: all 0.2s ease;
+    }
+    .mic-btn:hover { border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+    .mic-btn.recording {
+      background: rgba(255,45,85,0.12);
+      border-color: rgba(255,45,85,0.6);
+      color: #ff2d55;
+      box-shadow: 0 0 16px rgba(255,45,85,0.3);
+      animation: glowPulse 1.2s ease-in-out infinite;
+    }
+
+    /* ────────────────────────────────
+       OUTPUT TEXT
+    ──────────────────────────────── */
+    .output-text {
+      font-family: var(--font-hud);
+      font-size: clamp(12px, 2vw, 13.5px);
+      line-height: 1.8;
+      color: #9ddcff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .cursor-blink::after {
+      content: '█';
+      display: inline;
+      animation: blink 0.9s step-end infinite;
+      color: var(--cyan);
+      font-size: 0.85em;
+    }
+
+    /* ────────────────────────────────
+       WAVEFORM
+    ──────────────────────────────── */
+    .wave-bar {
+      width: 3px; border-radius: 2px;
+      background: linear-gradient(to top, #ff2d55, #ff6a00);
+      transform-origin: bottom;
+    }
+    .wave-bar:nth-child(1) { animation: wave 0.7s ease-in-out infinite; }
+    .wave-bar:nth-child(2) { animation: wave 0.8s ease-in-out infinite 0.1s; }
+    .wave-bar:nth-child(3) { animation: wave 0.65s ease-in-out infinite 0.2s; }
+    .wave-bar:nth-child(4) { animation: wave 0.75s ease-in-out infinite 0.05s; }
+    .wave-bar:nth-child(5) { animation: wave 0.9s ease-in-out infinite 0.15s; }
+
+    /* ────────────────────────────────
+       THINKING DOTS
+    ──────────────────────────────── */
+    .think-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--cyan);
+    }
+    .think-dot:nth-child(1) { animation: thinking 1.1s infinite ease-in-out; }
+    .think-dot:nth-child(2) { animation: thinking 1.1s infinite ease-in-out 0.2s; }
+    .think-dot:nth-child(3) { animation: thinking 1.1s infinite ease-in-out 0.4s; }
+
+    /* ────────────────────────────────
+       ARC REACTOR LOGO
+    ──────────────────────────────── */
+    .arc-reactor {
+      position: relative; flex-shrink: 0;
+    }
+    .arc-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 1.5px solid transparent;
+    }
+    .arc-ring-1 {
+      border-top-color: var(--cyan); border-right-color: transparent;
+      border-bottom-color: transparent; border-left-color: transparent;
+      animation: rotCW 2.4s linear infinite;
+    }
+    .arc-ring-2 {
+      inset: 4px;
+      border-bottom-color: rgba(0,212,255,0.6); border-right-color: rgba(0,212,255,0.6);
+      border-top-color: transparent; border-left-color: transparent;
+      animation: rotCCW 1.8s linear infinite;
+    }
+    .arc-core {
+      position: absolute; inset: 8px;
+      background: radial-gradient(circle, rgba(0,212,255,0.8) 0%, rgba(0,80,180,0.5) 60%, transparent 100%);
+      border-radius: 50%;
+      animation: pulseOpacity 2s ease-in-out infinite;
+    }
+
+    /* ────────────────────────────────
+       SCROLLBAR inside panels
+    ──────────────────────────────── */
+    .panel-scroll { overflow-y: auto; }
+    .panel-scroll::-webkit-scrollbar { width: 2px; }
+    .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+    .panel-scroll::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); }
+
+    /* ────────────────────────────────
+       RESPONSIVE LAYOUT VARS
+    ──────────────────────────────── */
+    /* Base (mobile-first) */
+    .app-shell {
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      padding: 12px;
+      gap: 10px;
+    }
+
+
+    /* ── header ── */
+    .app-header {
+      display: flex; align-items: center;
+      gap: 10px; flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .header-title { flex: 1; min-width: 0; }
+    .header-status {
+      display: flex; align-items: center;
+      gap: 8px; flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    /* ── main area ── */
+    .app-main {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── output panel ── */
+    .output-panel {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+    }
+    .output-panel-body {
+      flex: 1; min-height: 0;
+      padding: 14px 16px;
+    }
+
+    /* ── input panel ── */
+    .input-panel { flex-shrink: 0; padding: 12px; }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .input-hint {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 8px; flex-wrap: wrap; gap: 4px;
+    }
+
+    /* ── node grid ── */
+    .node-grid {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    .node-card {
+      background: rgba(0,20,40,0.5);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      transition: border-color 0.2s;
+      animation: neonBorder 4s ease-in-out infinite;
+    }
+    .node-card.active {
+      border-color: rgba(0,255,159,0.3);
+      background: rgba(0,255,159,0.04);
+      animation: none;
+    }
+
+    /* TABLET: >= 640px */
+    @media (min-width: 640px) {
+      .app-shell { padding: 16px; gap: 12px; }
+      .node-grid { grid-template-columns: repeat(4, 1fr); }
+      .output-panel-body { padding: 18px 20px; }
+    }
+
+    /* DESKTOP: >= 1024px */
+    @media (min-width: 1024px) {
+      .app-shell {
+        max-width: 900px; margin: 0 auto;
+        padding: 20px; gap: 14px;
+      }
+    }
+
+    /* LARGE: >= 1280px */
+    @media (min-width: 1280px) {
+      .app-shell { max-width: 1000px; }
+    }
+
+    /* ── Make header wrap nicely on small screens ── */
+    @media (max-width: 480px) {
+      .app-header { gap: 8px; }
+      .header-status { width: 100%; justify-content: flex-start; }
+      .status-text-long { display: none; }
+      .input-hint .hint-keys { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="grid-canvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="sweep"></div>
+  <div id="vignette"></div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+
+  <script>
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      const s = 60;
+      ctx.lineWidth = 0.5;
+
+      // vertical lines
+      ctx.strokeStyle = 'rgba(0,212,255,0.06)';
+      for (let x = 0; x < W; x += s) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      // horizontal lines
+      for (let y = 0; y < H; y += s) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      // pulsing intersection dots
+      const time = t * 0.0004;
+      for (let x = 0; x <= W; x += s) {
+        for (let y = 0; y <= H; y += s) {
+          const phase = (x * 0.02 + y * 0.015 + time);
+          const a = Math.sin(phase) * 0.5 + 0.5;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0,212,255,${0.05 + a * 0.15})`;
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "omni-project",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,dashboard -c cyan,magenta \"bun run server\" \"bun run dashboard\"",
+    "server": "bun run --cwd qvac server.js",
+    "dashboard": "bun run --cwd omnimesh-dashboard dev",
+    "media-node": "bun run --cwd qvac media-node.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
