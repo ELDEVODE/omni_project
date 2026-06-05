@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@omnimesh/installer": "workspace:*",
-    "@omnimesh/protocol": "workspace:*",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

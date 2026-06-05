@@ -19,7 +19,6 @@
       },
       "dependencies": {
         "@omnimesh/installer": "workspace:*",
-        "@omnimesh/protocol": "workspace:*",
         "qrcode": "^1.5.4",
       },
       "devDependencies": {
@@ -35,7 +34,6 @@
       },
       "dependencies": {
         "@omnimesh/installer": "workspace:*",
-        "@omnimesh/protocol": "workspace:*",
         "bonjour-service": "^1.3.0",
       },
       "devDependencies": {
@@ -52,23 +50,15 @@
     "packages/installer": {
       "name": "@omnimesh/installer",
       "version": "0.1.0",
-      "dependencies": {
-        "@omnimesh/protocol": "workspace:*",
-      },
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5.6.3",
       },
     },
-    "packages/protocol": {
-      "name": "@omnimesh/protocol",
-      "version": "0.1.0",
-    },
     "packages/web": {
       "name": "@omnimesh/web",
       "version": "0.1.0",
       "dependencies": {
-        "@omnimesh/protocol": "workspace:*",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
       },
@@ -81,25 +71,6 @@
         "typescript": "^5.6.3",
         "vite": "^8.0.0",
       },
-    },
-    "packages/worker": {
-      "name": "@omnimesh/worker",
-      "version": "0.1.0",
-      "dependencies": {
-        "@omnimesh/installer": "workspace:*",
-        "@omnimesh/protocol": "workspace:*",
-        "bonjour-service": "^1.3.0",
-      },
-      "devDependencies": {
-        "@types/node": "^22.10.0",
-        "typescript": "^5.6.3",
-      },
-      "peerDependencies": {
-        "@qvac/sdk": "",
-      },
-      "optionalPeers": [
-        "@qvac/sdk",
-      ],
     },
   },
   "packages": {
@@ -135,11 +106,7 @@
 
     "@omnimesh/installer": ["@omnimesh/installer@workspace:packages/installer"],
 
-    "@omnimesh/protocol": ["@omnimesh/protocol@workspace:packages/protocol"],
-
     "@omnimesh/web": ["@omnimesh/web@workspace:packages/web"],
-
-    "@omnimesh/worker": ["@omnimesh/worker@workspace:packages/worker"],
 
     "@oxc-project/types": ["@oxc-project/types@0.133.0", "", {}, "sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA=="],
 

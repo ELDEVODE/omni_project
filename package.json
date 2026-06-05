@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "dev:host": "bun run --cwd packages/host dev",
-    "dev:worker": "bun run --cwd packages/worker dev",
+
     "dev:web": "bun run --cwd packages/web dev",
     "dev:cli": "bun run --cwd packages/cli dev",
     "build": "bun run --filter '*' build",
@@ -36,8 +36,6 @@
     "packages/cli",
     "packages/host",
     "packages/installer",
-    "packages/protocol",
-    "packages/web",
-    "packages/worker"
+    "packages/web"
   ]
 }
