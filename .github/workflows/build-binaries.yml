@@ -122,13 +122,17 @@ jobs:
         run: |
           cd artifacts
           : > checksums.txt
-          for f in */**; do
-            [ -f "$f" ] || continue
-            if command -v sha256sum >/dev/null 2>&1; then
-              sha256sum "$f" >> checksums.txt
-            else
-              shasum -a 256 "$f" >> checksums.txt
-            fi
+          for d in */; do
+            [ -d "$d" ] || continue
+            for f in "$d"*; do
+              [ -f "$f" ] || continue
+              base=$(basename "$f")
+              if command -v sha256sum >/dev/null 2>&1; then
+                (cd "$d" && sha256sum "$base") >> checksums.txt
+              else
+                (cd "$d" && shasum -a 256 "$base") >> checksums.txt
+              fi
+            done
           done
           cat checksums.txt
 
