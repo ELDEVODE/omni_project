@@ -253,7 +253,7 @@ ${desc}
   <ul class="nav">${nav}</ul>
   <div class="install">
     <h4>Install</h4>
-    <pre class="code"><code class="lang-bash">curl -fsSL https://omnimesh.github.io/omni/install.sh | bash</code></pre>
+    <pre class="code"><code class="lang-bash">curl -fsSL https://eldevode.github.io/omni_project/install.sh | bash</code></pre>
   </div>
 </aside>
 <main class="content">
@@ -311,6 +311,20 @@ function copyAssets() {
 		}
 		const data = readFileSync(src)
 		writeFileSync(join(distDir, 'assets', t), data)
+	}
+
+	const installScripts = [
+		{ src: join(root, 'docs', 'install.sh'), out: 'install.sh' },
+		{ src: join(root, 'docs', 'install.ps1'), out: 'install.ps1' },
+	]
+	for (const { src, out } of installScripts) {
+		if (!existsSync(src)) {
+			console.warn(`  ! missing install script ${relative(root, src)} — skipping`)
+			continue
+		}
+		const data = readFileSync(src)
+		writeFileSync(join(distDir, out), data)
+		console.log(`  ${out}`)
 	}
 }
 

@@ -12,13 +12,13 @@ description: Install omni, boot a host, join a worker, and run a request.
 macOS / Linux:
 
 ```bash
-curl -fsSL https://omnimesh.github.io/omni/install.sh | bash
+curl -fsSL https://eldevode.github.io/omni_project/install.sh | bash
 ```
 
 Windows (PowerShell 5+):
 
 ```powershell
-iwr -useb https://omnimesh.github.io/omni/install.ps1 | iex
+iwr -useb https://eldevode.github.io/omni_project/install.ps1 | iex
 ```
 
 The installer puts `omni` in `~/.local/bin` (or `%LOCALAPPDATA%\Programs\OmniMesh`
@@ -27,7 +27,7 @@ on Windows) and tells you how to add it to `PATH`.
 If you already have a release tag in mind:
 
 ```bash
-OMNI_VERSION=v0.1.0 curl -fsSL https://omnimesh.github.io/omni/install.sh | bash
+OMNI_VERSION=v0.1.3 curl -fsSL https://eldevode.github.io/omni_project/install.sh | bash
 ```
 
 ## 2. Verify

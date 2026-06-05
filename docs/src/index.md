@@ -13,7 +13,7 @@ without a central server, and the dashboard, CLI, and OpenAI-compat endpoint sta
 close to the data you already have.
 
 ```bash
-curl -fsSL https://omnimesh.github.io/omni/install.sh | bash
+curl -fsSL https://eldevode.github.io/omni_project/install.sh | bash
 omni doctor
 omni host
 ```
@@ -44,4 +44,4 @@ decentralized, low-latency, sovereign. The mesh lives where your data lives.
 
 ## License
 
-MIT. See [LICENSE](https://github.com/omnimesh/omni/blob/main/LICENSE).
+MIT. See [LICENSE](https://github.com/ELDEVODE/omni_project/blob/main/LICENSE).
