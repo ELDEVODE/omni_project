@@ -307,9 +307,7 @@ export default function App() {
 						No models loaded — use Models panel to pull
 					</span>
 				) : (
-					models.map((m) => (
-						<ModelChip key={m.id} model={m} />
-					))
+					models.map((m) => <ModelChip key={m.id} model={m} />)
 				)}
 			</div>
 		</div>
@@ -330,7 +328,13 @@ function ModelChip({ model }: { model: { id: string } }) {
 				flexShrink: 0,
 			}}
 		>
-			<span style={{ color: 'var(--cyan)', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
+			<span
+				style={{
+					color: 'var(--cyan)',
+					fontSize: 10,
+					fontFamily: 'var(--font-mono)',
+				}}
+			>
 				{model.id}
 			</span>
 		</div>

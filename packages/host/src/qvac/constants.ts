@@ -1,4 +1,8 @@
-export { LLAMA_3_2_1B_INST_Q4_0, QWEN3_600M_INST_Q4, TTS_EN_SUPERTONIC_Q8_0 } from '@qvac/sdk'
+export {
+	LLAMA_3_2_1B_INST_Q4_0,
+	QWEN3_600M_INST_Q4,
+	TTS_EN_SUPERTONIC_Q8_0,
+} from '@qvac/sdk'
 
 export const DEFAULT_MODEL_ALIASES = {
 	'llama-3.2-1b': 'LLAMA_3_2_1B_INST_Q4_0',

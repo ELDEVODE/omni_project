@@ -19,7 +19,9 @@ export function VoicePanel() {
 		setResult(null)
 		try {
 			setPhases((p) => [...p, 'transcribe (simulated ASR)…'])
-			const syntheticAudio = new Blob([new Uint8Array(44)], { type: 'audio/wav' })
+			const syntheticAudio = new Blob([new Uint8Array(44)], {
+				type: 'audio/wav',
+			})
 			let transcript = input
 			try {
 				transcript = await api.transcribe(syntheticAudio, 'whisper')
@@ -32,7 +34,10 @@ export function VoicePanel() {
 			const res = await api.chat({
 				model: 'llama-3.2-1b',
 				messages: [
-					{ role: 'system', content: 'You are a helpful voice assistant. Respond concisely.' },
+					{
+						role: 'system',
+						content: 'You are a helpful voice assistant. Respond concisely.',
+					},
 					{ role: 'user', content: transcript },
 				],
 				temperature: 0.3,
@@ -45,7 +50,8 @@ export function VoicePanel() {
 			try {
 				const AudioCtx =
 					window.AudioContext ||
-					(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+					(window as unknown as { webkitAudioContext: typeof AudioContext })
+						.webkitAudioContext
 				const audioCtx = new AudioCtx()
 				const audioBuf = await audioCtx.decodeAudioData(
 					await api.speech('tts', reply, 'default'),

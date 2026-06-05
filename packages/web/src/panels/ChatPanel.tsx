@@ -46,7 +46,9 @@ export function ChatPanel() {
 			const res = await api.chat({
 				model: 'llama-3.2-1b',
 				messages: [
-					...turns.filter((t) => t.text).map((t) => ({ role: t.role, content: t.text })),
+					...turns
+						.filter((t) => t.text)
+						.map((t) => ({ role: t.role, content: t.text })),
 					{ role: 'user', content: prompt },
 				],
 				stream: true,
@@ -80,8 +82,7 @@ export function ChatPanel() {
 								return copy
 							})
 						}
-					} catch {
-					}
+					} catch {}
 				}
 			}
 			if (acc && ttsEnabled) {

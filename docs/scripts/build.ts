@@ -246,7 +246,7 @@ ${desc}
     <span class="tag">decentralized · air-gapped · sovereign</span>
   </div>
   <nav class="topnav">
-    <a href="https://github.com/omnimesh/omni" class="ext">GitHub →</a>
+    <a href="https://github.com/ELDEVODE/omni_project" class="ext">GitHub →</a>
   </nav>
 </header>
 <aside class="sidebar">

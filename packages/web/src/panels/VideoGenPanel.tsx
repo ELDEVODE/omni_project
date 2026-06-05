@@ -4,7 +4,10 @@ import { api } from '../lib/api.ts'
 export function VideoGenPanel() {
 	const [prompt, setPrompt] = useState('a rocket launching')
 	const [progress, setProgress] = useState<number>(0)
-	const [result, setResult] = useState<{ url?: string; b64_json?: string } | null>(null)
+	const [result, setResult] = useState<{
+		url?: string
+		b64_json?: string
+	} | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
 

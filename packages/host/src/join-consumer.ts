@@ -1,5 +1,5 @@
-import { tryLoadQVAC, makeConsumer } from './qvac/consumer.ts'
 import { log } from './log.ts'
+import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 
 const providerPublicKey: string = process.env.OMNI_PROVIDER_PUBLIC_KEY ?? ''
 
@@ -9,7 +9,9 @@ if (!providerPublicKey) {
 }
 
 async function startConsumer(): Promise<void> {
-	log.info('Starting QVAC consumer…', { providerPublicKey: `${providerPublicKey.slice(0, 16)}…` })
+	log.info('Starting QVAC consumer…', {
+		providerPublicKey: `${providerPublicKey.slice(0, 16)}…`,
+	})
 
 	const sdk = await tryLoadQVAC()
 	if (!sdk) {

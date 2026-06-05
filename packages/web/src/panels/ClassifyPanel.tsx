@@ -7,7 +7,9 @@ export function ClassifyPanel() {
 	const [text, setText] = useState(
 		'I love programming in TypeScript and building AI systems',
 	)
-	const [categories, setCategories] = useState('technology, sports, politics, entertainment, science')
+	const [categories, setCategories] = useState(
+		'technology, sports, politics, entertainment, science',
+	)
 	const [scores, setScores] = useState<Score[] | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
@@ -59,10 +61,15 @@ export function ClassifyPanel() {
 					fontSize: 13,
 				}}
 			/>
-			<label className="hud-label" style={{ display: 'block', marginTop: 8, fontSize: 10, opacity: 0.6 }}>
+			<label
+				htmlFor="categories"
+				className="hud-label"
+				style={{ display: 'block', marginTop: 8, fontSize: 10, opacity: 0.6 }}
+			>
 				Categories (comma-separated)
 			</label>
 			<input
+				id="categories"
 				value={categories}
 				onChange={(e) => setCategories(e.target.value)}
 				style={{

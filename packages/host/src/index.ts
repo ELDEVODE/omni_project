@@ -1,13 +1,13 @@
+import { spawn } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn } from 'node:child_process'
+import { type HostConfig, loadConfig } from './config.ts'
+import { log } from './log.ts'
 import { loadQVACConfig } from './qvac/config.ts'
 import { QVACProvider } from './qvac/provider.ts'
 import { ModelRegistry } from './qvac/registry.ts'
-import { log } from './log.ts'
-import { type HostConfig, loadConfig } from './config.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,8 +21,12 @@ const PEM_CANDIDATES = [
 ]
 
 function loadSslOptions(): { key: string; cert: string } | null {
-	const certPath = PEM_CANDIDATES.find((p) => p.endsWith('.pem') && fs.existsSync(p))
-	const keyPath = PEM_CANDIDATES.find((p) => p.endsWith('-key.pem') && fs.existsSync(p))
+	const certPath = PEM_CANDIDATES.find(
+		(p) => p.endsWith('.pem') && fs.existsSync(p),
+	)
+	const keyPath = PEM_CANDIDATES.find(
+		(p) => p.endsWith('-key.pem') && fs.existsSync(p),
+	)
 	if (!certPath || !keyPath) {
 		log.warn('No TLS certs found — falling back to HTTP (development only)')
 		return null
@@ -91,27 +95,32 @@ function serveDashboard(req: Request): Response {
 		ext === '.html'
 			? 'text/html'
 			: ext === '.js'
-			? 'application/javascript'
-			: ext === '.css'
-			? 'text/css'
-			: ext === '.json'
-			? 'application/json'
-			: ext === '.png'
-			? 'image/png'
-			: ext === '.svg'
-			? 'image/svg+xml'
-			: ext === '.ico'
-			? 'image/x-icon'
-			: ext === '.webmanifest'
-			? 'application/manifest+json'
-			: 'application/octet-stream'
+				? 'application/javascript'
+				: ext === '.css'
+					? 'text/css'
+					: ext === '.json'
+						? 'application/json'
+						: ext === '.png'
+							? 'image/png'
+							: ext === '.svg'
+								? 'image/svg+xml'
+								: ext === '.ico'
+									? 'image/x-icon'
+									: ext === '.webmanifest'
+										? 'application/manifest+json'
+										: 'application/octet-stream'
 
 	return new Response(fs.readFileSync(filePath), {
-		headers: { 'Content-Type': contentType, 'Access-Control-Allow-Origin': '*' },
+		headers: {
+			'Content-Type': contentType,
+			'Access-Control-Allow-Origin': '*',
+		},
 	})
 }
 
-export async function startHost(config: Partial<HostConfig> = {}): Promise<void> {
+export async function startHost(
+	config: Partial<HostConfig> = {},
+): Promise<void> {
 	const cfg: HostConfig = loadConfig(config)
 	const state = { secret: cfg.secret }
 	const qvacCfg = loadQVACConfig()
@@ -136,15 +145,26 @@ export async function startHost(config: Partial<HostConfig> = {}): Promise<void>
 
 	const openaiPort = cfg.openaiPort ?? 11434
 	let openaiServer: ReturnType<typeof spawn> | null = null
-	let openaiUrl = `http://127.0.0.1:${openaiPort}`
+	const openaiUrl = `http://127.0.0.1:${openaiPort}`
 
 	try {
-		openaiServer = spawn('qvac', ['serve', 'openai', '--port', String(openaiPort), '--cors'], {
-			stdio: ['ignore', 'pipe', 'pipe'],
-			env: { ...process.env, QVAC_CONFIG_PATH: path.resolve(process.cwd(), 'qvac.config.json') },
-		})
-		openaiServer.stdout?.on('data', (d) => log.debug(`[qvac-serve] ${d.toString().trim()}`))
-		openaiServer.stderr?.on('data', (d) => log.debug(`[qvac-serve] ${d.toString().trim()}`))
+		openaiServer = spawn(
+			'qvac',
+			['serve', 'openai', '--port', String(openaiPort), '--cors'],
+			{
+				stdio: ['ignore', 'pipe', 'pipe'],
+				env: {
+					...process.env,
+					QVAC_CONFIG_PATH: path.resolve(process.cwd(), 'qvac.config.json'),
+				},
+			},
+		)
+		openaiServer.stdout?.on('data', (d) =>
+			log.debug(`[qvac-serve] ${d.toString().trim()}`),
+		)
+		openaiServer.stderr?.on('data', (d) =>
+			log.debug(`[qvac-serve] ${d.toString().trim()}`),
+		)
 		await new Promise((resolve) => setTimeout(resolve, 2000))
 		log.info(`OpenAI-compat server started on ${openaiUrl}`)
 	} catch (err) {
@@ -178,7 +198,10 @@ export async function startHost(config: Partial<HostConfig> = {}): Promise<void>
 			if (url.pathname === '/api/auth/status') {
 				return Response.json({ required: Boolean(state.secret) })
 			}
-			if (url.pathname === '/api/admin/rotate-secret' && req.method === 'POST') {
+			if (
+				url.pathname === '/api/admin/rotate-secret' &&
+				req.method === 'POST'
+			) {
 				if (!checkRequestAuth(req, state.secret)) {
 					return unauthorizedResponse()
 				}
@@ -218,7 +241,9 @@ export async function startHost(config: Partial<HostConfig> = {}): Promise<void>
 	const displayUrl = state.secret ? `${baseUrl}?token=${state.secret}` : baseUrl
 
 	log.info(`🚀 OmniMesh host online — ${displayUrl}`)
-	log.info(`🛰  QVAC provider — ${provider.publicKey || 'not running (install @qvac/sdk)'}`)
+	log.info(
+		`🛰  QVAC provider — ${provider.publicKey || 'not running (install @qvac/sdk)'}`,
+	)
 	log.info(`🤖 OpenAI-compat endpoint on ${openaiUrl}`)
 	if (cfg.publicHost) {
 		log.info(

@@ -147,15 +147,32 @@ function staticChecks(): DoctorCheck[] {
 			key: 'qvac-sdk',
 			run: async () => {
 				try {
-					const proc = Bun.spawnSync(['bunx', '--package=@qvac/sdk@0.12.2', 'node', '-e', 'import("@qvac/sdk")'], {
-						stdout: 'pipe',
-						stderr: 'pipe',
-						timeout: 10000,
-					})
+					const proc = Bun.spawnSync(
+						[
+							'bunx',
+							'--package=@qvac/sdk@0.12.2',
+							'node',
+							'-e',
+							'import("@qvac/sdk")',
+						],
+						{
+							stdout: 'pipe',
+							stderr: 'pipe',
+							timeout: 10000,
+						},
+					)
 					if (proc.exitCode === 0) {
-						return { key: 'qvac sdk', value: '@qvac/sdk@0.12.2 available', status: 'ok' }
+						return {
+							key: 'qvac sdk',
+							value: '@qvac/sdk@0.12.2 available',
+							status: 'ok',
+						}
 					}
-					return { key: 'qvac sdk', value: 'not installed (run: bun add @qvac/sdk)', status: 'warn' }
+					return {
+						key: 'qvac sdk',
+						value: 'not installed (run: bun add @qvac/sdk)',
+						status: 'warn',
+					}
 				} catch {
 					return { key: 'qvac sdk', value: 'check failed', status: 'warn' }
 				}
@@ -165,15 +182,27 @@ function staticChecks(): DoctorCheck[] {
 			key: 'qvac-doctor',
 			run: async () => {
 				try {
-					const proc = Bun.spawnSync(['bunx', '--package=@qvac/cli@0.6.0', 'qvac', 'doctor', '--json'], {
-						stdout: 'pipe',
-						stderr: 'pipe',
-						timeout: 30000,
-					})
+					const proc = Bun.spawnSync(
+						['bunx', '--package=@qvac/cli@0.6.0', 'qvac', 'doctor', '--json'],
+						{
+							stdout: 'pipe',
+							stderr: 'pipe',
+							timeout: 30000,
+						},
+					)
 					if (proc.exitCode === 0) {
-						const report = JSON.parse(new TextDecoder().decode(proc.stdout))
-						const failed = report.sections?.flatMap((s: any) => s.checks?.filter((c: any) => c.status === 'fail') ?? []).length ?? 0
-						const warned = report.sections?.flatMap((s: any) => s.checks?.filter((c: any) => c.status === 'warn') ?? []).length ?? 0
+						const report: {
+							ok: boolean
+							sections?: Array<{ checks?: Array<{ status: string }> }>
+						} = JSON.parse(new TextDecoder().decode(proc.stdout))
+						const failed =
+							report.sections?.flatMap(
+								(s) => s.checks?.filter((c) => c.status === 'fail') ?? [],
+							).length ?? 0
+						const warned =
+							report.sections?.flatMap(
+								(s) => s.checks?.filter((c) => c.status === 'warn') ?? [],
+							).length ?? 0
 						return {
 							key: 'qvac doctor',
 							value: `${report.ok ? 'pass' : 'fail'} (${failed} fail, ${warned} warn)`,
@@ -181,7 +210,11 @@ function staticChecks(): DoctorCheck[] {
 							detail: JSON.stringify(report),
 						}
 					}
-					return { key: 'qvac doctor', value: 'not run (install @qvac/cli)', status: 'warn' }
+					return {
+						key: 'qvac doctor',
+						value: 'not run (install @qvac/cli)',
+						status: 'warn',
+					}
 				} catch {
 					return { key: 'qvac doctor', value: 'check failed', status: 'warn' }
 				}

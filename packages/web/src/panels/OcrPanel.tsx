@@ -16,12 +16,16 @@ export function OcrPanel() {
 		setResult(null)
 		try {
 			const b64 = await fileToBase64(file)
-			const system = 'You are an OCR engine. Extract all text from the provided image. Return ONLY the extracted text, no explanation. Report the number of lines.'
+			const system =
+				'You are an OCR engine. Extract all text from the provided image. Return ONLY the extracted text, no explanation. Report the number of lines.'
 			const res = await api.chat({
 				model: 'llama-3.2-1b',
 				messages: [
 					{ role: 'system', content: system },
-					{ role: 'user', content: `[Image: ${b64}]\n\nExtract all text from this image.` },
+					{
+						role: 'user',
+						content: `[Image: ${b64}]\n\nExtract all text from this image.`,
+					},
 				],
 				temperature: 0,
 				max_tokens: 1024,

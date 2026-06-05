@@ -59,7 +59,12 @@ export interface HealthResponse {
 
 export interface ModelsResponse {
 	object: 'list'
-	data: Array<{ id: string; object: 'model'; created: number; owned_by: string }>
+	data: Array<{
+		id: string
+		object: 'model'
+		created: number
+		owned_by: string
+	}>
 }
 
 export interface ChatCompletionChunk {
@@ -84,7 +89,11 @@ export interface ChatCompletionResponse {
 		message: { role: 'assistant'; content: string }
 		finish_reason: string
 	}>
-	usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number }
+	usage: {
+		prompt_tokens: number
+		completion_tokens: number
+		total_tokens: number
+	}
 }
 
 export interface TranscriptionResponse {
@@ -116,10 +125,11 @@ export const api = {
 		stream?: boolean
 		temperature?: number
 		max_tokens?: number
-	}) => request<ChatCompletionResponse | ReadableStream>('/chat/completions', {
-		method: 'POST',
-		body: JSON.stringify(body),
-	}),
+	}) =>
+		request<ChatCompletionResponse | ReadableStream>('/chat/completions', {
+			method: 'POST',
+			body: JSON.stringify(body),
+		}),
 	transcribe: async (audioBlob: Blob, model: string): Promise<string> => {
 		const form = new FormData()
 		form.append('file', audioBlob)
@@ -136,7 +146,11 @@ export const api = {
 		const data = await res.json()
 		return data.text
 	},
-	speech: async (model: string, input: string, voice: string): Promise<ArrayBuffer> => {
+	speech: async (
+		model: string,
+		input: string,
+		voice: string,
+	): Promise<ArrayBuffer> => {
 		const token = loadAuthToken()
 		const headers = new Headers({ 'Content-Type': 'application/json' })
 		if (token) headers.set('Authorization', `Bearer ${token}`)

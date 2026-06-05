@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react'
 import { loadAuthToken } from '@/lib/api'
-import { api, type ChatCompletionChunk } from '@/lib/api'
+import { type ChatCompletionChunk, api } from '@/lib/api'
+import { useCallback, useRef, useState } from 'react'
 
 export type ChatMessage = {
 	role: 'user' | 'assistant' | 'system'
@@ -8,7 +8,11 @@ export type ChatMessage = {
 }
 
 export type UseQVACChatReturn = {
-	send: (messages: ChatMessage[], model: string, onToken: (token: string) => void) => Promise<void>
+	send: (
+		messages: ChatMessage[],
+		model: string,
+		onToken: (token: string) => void,
+	) => Promise<void>
 	abort: () => void
 	loading: boolean
 	error: string | null
@@ -20,7 +24,11 @@ export function useQVACChat(): UseQVACChatReturn {
 	const controllerRef = useRef<AbortController | null>(null)
 
 	const send = useCallback(
-		async (messages: ChatMessage[], model: string, onToken: (token: string) => void) => {
+		async (
+			messages: ChatMessage[],
+			model: string,
+			onToken: (token: string) => void,
+		) => {
 			setLoading(true)
 			setError(null)
 			controllerRef.current = new AbortController()
@@ -30,18 +38,21 @@ export function useQVACChat(): UseQVACChatReturn {
 				const headers = new Headers({ 'Content-Type': 'application/json' })
 				if (token) headers.set('Authorization', `Bearer ${token}`)
 
-				const res = await fetch(`${import.meta.env.VITE_HOST_URL ?? ''}/v1/chat/completions`, {
-					method: 'POST',
-					headers,
-					body: JSON.stringify({
-						model,
-						messages,
-						stream: true,
-						temperature: 0.7,
-						max_tokens: 2048,
-					}),
-					signal: controllerRef.current.signal,
-				})
+				const res = await fetch(
+					`${import.meta.env.VITE_HOST_URL ?? ''}/v1/chat/completions`,
+					{
+						method: 'POST',
+						headers,
+						body: JSON.stringify({
+							model,
+							messages,
+							stream: true,
+							temperature: 0.7,
+							max_tokens: 2048,
+						}),
+						signal: controllerRef.current.signal,
+					},
+				)
 
 				if (!res.ok || !res.body) {
 					const text = await res.text().catch(() => '')
@@ -66,8 +77,7 @@ export function useQVACChat(): UseQVACChatReturn {
 							const chunk = JSON.parse(raw) as ChatCompletionChunk
 							const delta = chunk.choices?.[0]?.delta?.content
 							if (delta) onToken(delta)
-						} catch {
-						}
+						} catch {}
 					}
 				}
 			} catch (err) {
@@ -90,7 +100,9 @@ export function useQVACChat(): UseQVACChatReturn {
 }
 
 export function useQVACModels() {
-	const [models, setModels] = useState<Array<{ id: string; object: 'model' }>>([])
+	const [models, setModels] = useState<Array<{ id: string; object: 'model' }>>(
+		[],
+	)
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 

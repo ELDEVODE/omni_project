@@ -18,7 +18,8 @@ export function SpeakPanel() {
 			if (autoplay) {
 				const AudioCtx =
 					window.AudioContext ||
-					(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+					(window as unknown as { webkitAudioContext: typeof AudioContext })
+						.webkitAudioContext
 				const audioCtx = new AudioCtx()
 				const audioBuf = await audioCtx.decodeAudioData(buf)
 				const src = audioCtx.createBufferSource()
@@ -36,7 +37,8 @@ export function SpeakPanel() {
 	return (
 		<div style={{ padding: 16, height: '100%', overflowY: 'auto' }}>
 			<p className="hud-label" style={{ marginBottom: 8, opacity: 0.6 }}>
-				Text-to-speech via /v1/audio/speech. Returns audio buffer and auto-plays.
+				Text-to-speech via /v1/audio/speech. Returns audio buffer and
+				auto-plays.
 			</p>
 			<textarea
 				value={text}

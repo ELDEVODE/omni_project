@@ -15,7 +15,11 @@ import type { QVACSDK } from './types.ts'
 
 export interface StartProviderOptions {
 	seed?: string
-	firewall?: { mode: 'allow' | 'block'; publicKeys?: string[]; allowEmpty?: boolean }
+	firewall?: {
+		mode: 'allow' | 'block'
+		publicKeys?: string[]
+		allowEmpty?: boolean
+	}
 	swarmRelays?: string[]
 	cacheDirectory?: string
 	loggerLevel?: 'debug' | 'info' | 'warn' | 'error'
