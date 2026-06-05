@@ -18,14 +18,12 @@ const commands: Command[] = [
 
 const argv = process.argv.slice(2)
 
-const normalizedArgv = argv.length > 0 && (argv[0] === '--help' || argv[0] === '-h')
-	? ['help', ...argv.slice(1)]
-	: argv
+const normalizedArgv =
+	argv.length > 0 && (argv[0] === '--help' || argv[0] === '-h')
+		? ['help', ...argv.slice(1)]
+		: argv
 
-if (
-	normalizedArgv.length === 0 ||
-	normalizedArgv[0] === 'help'
-) {
+if (normalizedArgv.length === 0 || normalizedArgv[0] === 'help') {
 	// eslint-disable-next-line no-console
 	console.log(BANNER)
 }
