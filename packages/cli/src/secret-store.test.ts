@@ -35,8 +35,10 @@ describe('secret-store', () => {
 		const token = 'unit-test-token-abc123'
 		store.writeSecret(token)
 		expect(store.readSecret()).toBe(token)
-		const stat = fs.statSync(store.getSecretPath())
-		expect(stat.mode & 0o777).toBe(0o600)
+		if (process.platform !== 'win32') {
+			const stat = fs.statSync(store.getSecretPath())
+			expect(stat.mode & 0o777).toBe(0o600)
+		}
 	})
 
 	test('generateSecret returns a 32-char base64url string', () => {
