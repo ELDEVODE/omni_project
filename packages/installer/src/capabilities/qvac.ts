@@ -85,7 +85,7 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 			continue
 		}
 		const r = await runCommand(
-			['bun', 'add', '@qvac/sdk'],
+			['npm', 'install', '@qvac/sdk'],
 			{ cwd: target, timeoutMs: 600_000 },
 			ctx,
 		)
@@ -93,8 +93,8 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 			yield {
 				kind: 'fail',
 				capability: 'qvac',
-				code: 'bun_add_failed',
-				message: `bun add @qvac/sdk in ${pkg.name} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 200)}`,
+				code: 'npm_install_failed',
+				message: `npm install @qvac/sdk in ${pkg.name} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 200)}`,
 			}
 			return
 		}

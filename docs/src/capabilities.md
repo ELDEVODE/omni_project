@@ -49,7 +49,7 @@ to connected peers.
 
 | Capability     | Description            | darwin                   | linux                                                | win32              | Restart |
 | -------------- | ---------------------- | ------------------------ | ---------------------------------------------------- | ------------------ | :-----: |
-| `qvac`         | `@qvac/sdk` (provider) | `bun add @qvac/sdk`      | `bun add @qvac/sdk`                                  | `bun add @qvac/sdk` |  yes   |
+| `qvac`         | `@qvac/sdk` (provider) | `npm install @qvac/sdk`   | `npm install @qvac/sdk`                              | `npm install @qvac/sdk`  |  yes   |
 | `ffmpeg`       | Media toolchain        | `brew install ffmpeg`    | `sudo apt-get install -y ffmpeg`                     | `winget install ffmpeg` | no |
 | `vulkan`       | GPU drivers + tools    | n/a (Metal)              | `sudo apt-get install -y mesa-vulkan-drivers vulkan-tools` | vendor drivers | no |
 | `openwakeword` | Wake-word model cache  | writes `~/.cache/omni/oww/.installed`                | same                                                 | same               | no      |

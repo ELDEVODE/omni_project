@@ -34,6 +34,60 @@ function statString(path: string): { mtimeMs: number; size: number } | null {
 	}
 }
 
+async function runWithTimeout(
+	cmd: string[],
+	timeoutMs: number,
+): Promise<{ exitCode: number | null; stdout: string; stderr: string }> {
+	const proc = Bun.spawn(cmd, {
+		stdout: 'pipe',
+		stderr: 'pipe',
+	})
+	const exitPromise = proc.exited
+	const stdoutPromise = new Response(proc.stdout).text()
+	const stderrPromise = new Response(proc.stderr).text()
+	const timeoutPromise = new Promise<number | null>((resolve) =>
+		setTimeout(() => {
+			try {
+				proc.kill('SIGKILL')
+			} catch {}
+			resolve(null)
+		}, timeoutMs),
+	)
+	const exitCode = await Promise.race([exitPromise, timeoutPromise])
+	if (exitCode === null) {
+		return { exitCode: null, stdout: '', stderr: 'timeout' }
+	}
+	const [stdout, stderr] = await Promise.all([stdoutPromise, stderrPromise])
+	return { exitCode, stdout, stderr }
+}
+
+async function checkCommandAvailable(
+	cmd: string,
+	timeoutMs: number,
+): Promise<boolean> {
+	try {
+		const proc = Bun.spawn(['which', cmd], {
+			stdout: 'pipe',
+			stderr: 'pipe',
+		})
+		const exitPromise = proc.exited
+		const timeoutPromise = new Promise<number | null>((resolve) =>
+			setTimeout(() => {
+				try {
+					proc.kill('SIGKILL')
+				} catch {}
+				resolve(null)
+			}, timeoutMs),
+		)
+		const exitCode = await Promise.race([exitPromise, timeoutPromise])
+		if (exitCode === null) return false
+		await proc.exited
+		return exitCode === 0
+	} catch {
+		return false
+	}
+}
+
 async function probePort(
 	host: string,
 	port: number,
@@ -146,55 +200,39 @@ function staticChecks(): DoctorCheck[] {
 		{
 			key: 'qvac-sdk',
 			run: async () => {
-				try {
-					const proc = Bun.spawnSync(
-						[
-							'bunx',
-							'--package=@qvac/sdk@0.12.2',
-							'node',
-							'-e',
-							'import("@qvac/sdk")',
-						],
-						{
-							stdout: 'pipe',
-							stderr: 'pipe',
-							timeout: 10000,
-						},
-					)
-					if (proc.exitCode === 0) {
-						return {
-							key: 'qvac sdk',
-							value: '@qvac/sdk@0.12.2 available',
-							status: 'ok',
-						}
-					}
+				const hasQvacBin = await checkCommandAvailable('qvac', 2000)
+				if (hasQvacBin) {
 					return {
 						key: 'qvac sdk',
-						value: 'not installed (run: bun add @qvac/sdk)',
-						status: 'warn',
+						value: 'qvac binary available',
+						status: 'ok',
 					}
-				} catch {
-					return { key: 'qvac sdk', value: 'check failed', status: 'warn' }
+				}
+				return {
+					key: 'qvac sdk',
+					value: 'not installed (run: omni install qvac)',
+					status: 'warn',
 				}
 			},
 		},
 		{
 			key: 'qvac-doctor',
 			run: async () => {
+				const hasQvacBin = await checkCommandAvailable('qvac', 2000)
+				if (!hasQvacBin) {
+					return {
+						key: 'qvac doctor',
+						value: 'not run (run: omni install qvac)',
+						status: 'warn',
+					}
+				}
 				try {
-					const proc = Bun.spawnSync(
-						['bunx', '--package=@qvac/cli@0.6.0', 'qvac', 'doctor', '--json'],
-						{
-							stdout: 'pipe',
-							stderr: 'pipe',
-							timeout: 30000,
-						},
-					)
+					const proc = await runWithTimeout(['qvac', 'doctor', '--json'], 10000)
 					if (proc.exitCode === 0) {
 						const report: {
 							ok: boolean
 							sections?: Array<{ checks?: Array<{ status: string }> }>
-						} = JSON.parse(new TextDecoder().decode(proc.stdout))
+						} = JSON.parse(proc.stdout)
 						const failed =
 							report.sections?.flatMap(
 								(s) => s.checks?.filter((c) => c.status === 'fail') ?? [],

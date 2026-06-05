@@ -122,7 +122,7 @@ try {
     Write-Host '  4. omni join <pubkey> # on other machines'
     Write-Host ''
     Write-Host 'Optional QVAC SDK:'
-    Write-Host '  bun add @qvac/sdk'
+    Write-Host '  npm install -g @qvac/sdk'
 } finally {
     if (Test-Path $Tmp) { Remove-Item -Recurse -Force $Tmp }
 }

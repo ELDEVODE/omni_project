@@ -67,7 +67,7 @@ export async function runCli(
 	argv: string[],
 ): Promise<number> {
 	const { cmd, rest, flags } = parseArgs(argv)
-	if (!cmd || cmd === 'help' || flags.help) {
+	if (!cmd || cmd === 'help') {
 		// eslint-disable-next-line no-console
 		console.log(help(commands))
 		return 0

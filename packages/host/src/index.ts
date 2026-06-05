@@ -9,6 +9,18 @@ import { loadQVACConfig } from './qvac/config.ts'
 import { QVACProvider } from './qvac/provider.ts'
 import { ModelRegistry } from './qvac/registry.ts'
 
+function commandExists(cmd: string): boolean {
+	const paths = (process.env.PATH ?? '').split(path.delimiter)
+	for (const dir of paths) {
+		const full = path.join(dir, cmd)
+		try {
+			fs.accessSync(full, fs.constants.X_OK)
+			return true
+		} catch {}
+	}
+	return false
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const PEM_CANDIDATES = [
@@ -147,28 +159,37 @@ export async function startHost(
 	let openaiServer: ReturnType<typeof spawn> | null = null
 	const openaiUrl = `http://127.0.0.1:${openaiPort}`
 
-	try {
-		openaiServer = spawn(
-			'qvac',
-			['serve', 'openai', '--port', String(openaiPort), '--cors'],
-			{
-				stdio: ['ignore', 'pipe', 'pipe'],
-				env: {
-					...process.env,
-					QVAC_CONFIG_PATH: path.resolve(process.cwd(), 'qvac.config.json'),
+	if (!commandExists('qvac')) {
+		log.warn(
+			'qvac binary not found in PATH — OpenAI-compat server disabled. Run `omni install qvac` to enable.',
+		)
+	} else {
+		try {
+			openaiServer = spawn(
+				'qvac',
+				['serve', 'openai', '--port', String(openaiPort), '--cors'],
+				{
+					stdio: ['ignore', 'pipe', 'pipe'],
+					env: {
+						...process.env,
+						QVAC_CONFIG_PATH: path.resolve(process.cwd(), 'qvac.config.json'),
+					},
 				},
-			},
-		)
-		openaiServer.stdout?.on('data', (d) =>
-			log.debug(`[qvac-serve] ${d.toString().trim()}`),
-		)
-		openaiServer.stderr?.on('data', (d) =>
-			log.debug(`[qvac-serve] ${d.toString().trim()}`),
-		)
-		await new Promise((resolve) => setTimeout(resolve, 2000))
-		log.info(`OpenAI-compat server started on ${openaiUrl}`)
-	} catch (err) {
-		log.warn(`Failed to start qvac serve openai: ${(err as Error).message}`)
+			)
+			openaiServer.stdout?.on('data', (d) =>
+				log.debug(`[qvac-serve] ${d.toString().trim()}`),
+			)
+			openaiServer.stderr?.on('data', (d) =>
+				log.debug(`[qvac-serve] ${d.toString().trim()}`),
+			)
+			openaiServer.on('error', (err) => {
+				log.warn(`qvac serve openai exited: ${err.message}`)
+			})
+			await new Promise((resolve) => setTimeout(resolve, 2000))
+			log.info(`OpenAI-compat server started on ${openaiUrl}`)
+		} catch (err) {
+			log.warn(`Failed to start qvac serve openai: ${(err as Error).message}`)
+		}
 	}
 
 	const sslOptions = loadSslOptions()

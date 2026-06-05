@@ -30,7 +30,7 @@ Options:
   OMNI_VERSION=vX    Install a specific version (default: latest)
 
 The QVAC SDK is an optional peer dependency. Install it separately with:
-  bun add @qvac/sdk
+  npm install -g @qvac/sdk
 EOF
       exit 0
       ;;
@@ -170,7 +170,7 @@ echo "     ↳ the secret is stored at ~/.omni/secret (mode 0600)"
 echo "  4. On other machines: omni join <pubkey> --secret=<token>"
 echo ""
 echo "Optional: install the QVAC SDK for full P2P inference."
-echo "  bun add @qvac/sdk"
+echo "  npm install -g @qvac/sdk"
 echo ""
 
 # ─── PATH hint ───────────────────────────────────────────────
