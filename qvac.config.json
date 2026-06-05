@@ -1,0 +1,56 @@
+{
+	"plugins": [
+		"llm-llamacpp",
+		"embed-llamacpp",
+		"transcription-whispercpp",
+		"tts-onnx",
+		"ocr-onnx",
+		"diffusion-cpp",
+		"translation-nmtcpp",
+		"classification-ggml"
+	],
+	"loggerConsoleOutput": true,
+	"loggerLevel": "info",
+	"swarmRelays": [
+		"wss://relay-01.qvac.ai",
+		"wss://relay-02.qvac.ai",
+		"wss://relay-03.qvac.ai"
+	],
+	"cacheDirectory": "~/.qvac/models",
+	"httpDownloadConcurrency": 3,
+	"httpConnectionTimeoutMs": 10000,
+	"registryDownloadMaxRetries": 3,
+	"registryStreamTimeoutMs": 60000,
+	"serve": {
+		"models": {
+			"llama-3.2-1b": {
+				"model": "LLAMA_3_2_1B_INST_Q4_0",
+				"default": true,
+				"preload": true,
+				"config": { "ctx_size": 8192 }
+			},
+			"qwen3-600m": {
+				"model": "QWEN3_600M_INST_Q4",
+				"default": true,
+				"preload": false,
+				"config": { "ctx_size": 4096 }
+			},
+			"whisper": {
+				"model": "WHISPER_TINY",
+				"default": true,
+				"preload": true,
+				"config": { "language": "en", "strategy": "greedy" }
+			},
+			"tts": {
+				"model": "TTS_EN_SUPERTONIC_Q8_0",
+				"default": true,
+				"preload": false
+			},
+			"embed": {
+				"model": "GTE_LARGE_FP16",
+				"default": true,
+				"preload": false
+			}
+		}
+	}
+}

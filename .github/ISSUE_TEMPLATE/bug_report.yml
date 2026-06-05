@@ -1,0 +1,91 @@
+name: Bug report
+description: Report a bug or unexpected behavior in OmniMesh
+title: "[bug] "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please run `omni doctor` first and paste the
+        output below — it captures most of what we need.
+
+  - type: textarea
+    id: describe
+    attributes:
+      label: What happened?
+      description: A clear, concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands you ran.
+      placeholder: |
+        1. `omni host --port 3005`
+        2. `omni join omni.local`
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: input
+    id: omni_version
+    attributes:
+      label: omni version
+      description: Output of `omni --version` or the release tag.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: bun_version
+    attributes:
+      label: Bun version
+      placeholder: "1.3.13"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS / architecture
+      placeholder: "macOS 14.2 arm64"
+    validations:
+      required: true
+
+  - type: input
+    id: qvac
+    attributes:
+      label: QVAC SDK version (if installed)
+      placeholder: "0.12.1 or 'not installed'"
+
+  - type: code_block
+    id: doctor
+    attributes:
+      label: Output of `omni doctor`
+      language: text
+      options:
+        render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Anything from `~/.omni/logs/` or stderr.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context

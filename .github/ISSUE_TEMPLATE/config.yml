@@ -1,0 +1,30 @@
+name: OmniMesh
+description: >-
+  Welcome to OmniMesh! Tell us what you need and pick the right form.
+title: ""
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Welcome! OmniMesh is a decentralized AI mesh that runs on every node.
+        A few quick pointers:
+
+        - The README has the [quickstart](https://github.com/omnimesh/omni#quickstart) and
+          [architecture](https://github.com/omnimesh/omni#built-on-qvac) sections.
+        - For installation problems, paste the output of `omni doctor` in your issue.
+        - For security issues, **do not** file a public issue — see
+          [SECURITY.md](https://github.com/omnimesh/omni/blob/main/SECURITY.md).
+
+        Choose the template that best matches your need below.
+  - type: choices
+    id: template
+    attributes:
+      label: What would you like to do?
+      options:
+        - Report a bug
+        - Request a feature
+        - Ask a question
+    validations:
+      required: true

@@ -1,0 +1,19 @@
+name: Question
+description: Ask a question about OmniMesh usage or design
+title: "[question] "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What's your question?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What did you try? What docs have you read?

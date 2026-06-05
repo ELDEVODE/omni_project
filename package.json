@@ -1,14 +1,43 @@
 {
-  "name": "omni-project",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "concurrently -n server,dashboard -c cyan,magenta \"bun run server\" \"bun run dashboard\"",
-    "server": "bun run --cwd qvac server.js",
-    "dashboard": "bun run --cwd omnimesh-dashboard dev",
-    "media-node": "bun run --cwd qvac media-node.js"
-  },
+  "name": "omnimesh",
+  "version": "0.1.0",
   "devDependencies": {
-    "concurrently": "^9.1.0"
-  }
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "latest",
+    "@types/qrcode": "^1.5.6",
+    "typescript": "^5.6.3"
+  },
+  "description": "Sovereign AI fabric — turn your LAN into a private AI cluster. One command to share compute across all your devices.",
+  "engines": {
+    "bun": ">=1.1.0",
+    "node": ">=22.17.0"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:host": "bun run --cwd packages/host dev",
+    "dev:worker": "bun run --cwd packages/worker dev",
+    "dev:web": "bun run --cwd packages/web dev",
+    "dev:cli": "bun run --cwd packages/cli dev",
+    "build": "bun run --filter '*' build",
+    "test": "bun test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "tsc -b",
+    "docs:gen": "bun run docs/scripts/gen-capabilities.ts",
+    "docs:build": "bun run docs:gen && bun run docs/scripts/build.ts",
+    "docs:serve": "bun --hot serve docs/dist",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules/.cache docs/dist"
+  },
+  "type": "module",
+  "workspaces": [
+    "packages/cli",
+    "packages/host",
+    "packages/installer",
+    "packages/protocol",
+    "packages/web",
+    "packages/worker"
+  ]
 }

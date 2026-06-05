@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a new capability for OmniMesh
+title: "[feat] "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are welcome. Please check the roadmap in the README
+        first — we may already be tracking it.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that OmniMesh doesn't support yet?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Sketch of the API or UI. Bonus points for a code sample.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds are you using today? Why aren't they enough?
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which packages does this touch? (host / worker / mobile / web / cli / protocol)
+      placeholder: "host, worker, protocol"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: How important is this to you?
+      options:
+        - Blocking my use of OmniMesh
+        - Important but I can work around it
+        - Nice to have
+    validations:
+      required: true

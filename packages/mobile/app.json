@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "OmniMesh",
+    "slug": "omnimesh",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "omnimesh",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020a12"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.omnimesh.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "OmniMesh needs microphone access for the 'Hey omni' wake word and voice commands.",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "package": "dev.omnimesh.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MICROPHONE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 29
+          },
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
+      "@qvac/sdk/expo-plugin"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

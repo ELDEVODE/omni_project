@@ -1,0 +1,128 @@
+[
+  {
+    "capability": "LLM chat",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "yes"
+  },
+  {
+    "capability": "Embeddings",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Retrieval-augmented generation",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "no",
+    "openai": "no"
+  },
+  {
+    "capability": "Fine-tuning",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "no",
+    "openai": "no"
+  },
+  {
+    "capability": "Multimodal",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "yes"
+  },
+  {
+    "capability": "Image generation",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "no",
+    "openai": "no"
+  },
+  {
+    "capability": "Video generation",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "no",
+    "openai": "no"
+  },
+  {
+    "capability": "ASR (speech → text)",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "TTS (text → speech)",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Voice assistant (oww → asr → llm → tts)",
+    "host": "no",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Translation",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Vision-language action",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "no",
+    "openai": "no"
+  },
+  {
+    "capability": "OCR",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Image classification",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "P2P delegated inference",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Distributed model registry",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Model asset streaming",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  },
+  {
+    "capability": "Blind relays for NAT",
+    "host": "yes",
+    "worker": "yes",
+    "mobile": "yes",
+    "openai": "no"
+  }
+]

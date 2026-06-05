@@ -1,0 +1,28 @@
+# CODEOWNERS
+
+# Default: main maintainers review everything. Add per-area owners below as
+# the project grows.
+
+# ── Core architecture ──
+/packages/protocol/    @omnimesh/maintainers
+/packages/host/        @omnimesh/maintainers
+/packages/worker/      @omnimesh/maintainers
+
+# ── Mobile ──
+/packages/mobile/      @omnimesh/maintainers
+
+# ── Web dashboard ──
+/packages/web/         @omnimesh/maintainers
+
+# ── CLI ──
+/packages/cli/         @omnimesh/maintainers
+
+# ── Docs & site ──
+/docs/                 @omnimesh/maintainers
+/README.md             @omnimesh/maintainers
+
+# ── CI & release ──
+/.github/              @omnimesh/maintainers
+
+# Anything not matched above still requires a maintainer.
+/*                     @omnimesh/maintainers

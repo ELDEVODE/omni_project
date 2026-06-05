@@ -1,0 +1,155 @@
+/* OmniMesh docs site — HUD theme
+   Dark, cyan, monospace. No JS dependencies. */
+
+:root {
+	--bg: #020a12;
+	--bg-2: #051624;
+	--bg-3: #0a2438;
+	--fg: #e6f6ff;
+	--fg-dim: #6f9bb8;
+	--cyan: #00d4ff;
+	--cyan-2: #5cffff;
+	--green: #4ade80;
+	--yellow: #facc15;
+	--red: #f87171;
+	--border: #0e3a55;
+	--shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+	--mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+	margin: 0;
+	padding: 0;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: var(--mono);
+	font-size: 14px;
+	line-height: 1.65;
+	min-height: 100vh;
+}
+
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a.ext::after { content: " ↗"; font-size: 0.85em; opacity: 0.7; }
+
+h1, h2, h3, h4 {
+	color: var(--cyan-2);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	margin-top: 1.6em;
+}
+h1 { font-size: 1.8em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+h2 { font-size: 1.35em; }
+h3 { font-size: 1.1em; }
+h4 { font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.1em; }
+
+hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+
+p { margin: 0.8em 0; }
+ul, ol { padding-left: 1.4em; }
+li { margin: 0.3em 0; }
+li::marker { color: var(--cyan); }
+
+code {
+	font-family: var(--mono);
+	background: var(--bg-3);
+	padding: 0.1em 0.4em;
+	border-radius: 3px;
+	font-size: 0.92em;
+	color: var(--cyan-2);
+}
+pre.code {
+	background: #000a14;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 1em;
+	overflow-x: auto;
+	font-size: 12.5px;
+	line-height: 1.5;
+	margin: 1em 0;
+	box-shadow: var(--shadow);
+}
+pre.code code { background: transparent; padding: 0; color: var(--fg); }
+.kw { color: #ff79c6; }
+.str { color: #f1fa8c; }
+.num { color: #bd93f9; }
+.cmt { color: #6272a4; font-style: italic; }
+
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { border: 1px solid var(--border); padding: 0.5em 0.8em; text-align: left; }
+th { background: var(--bg-3); color: var(--cyan-2); }
+tr:nth-child(even) td { background: rgba(0, 212, 255, 0.03); }
+
+blockquote {
+	margin: 1em 0;
+	padding: 0.5em 1em;
+	border-left: 3px solid var(--cyan);
+	background: var(--bg-2);
+	color: var(--fg-dim);
+}
+
+.layout {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	grid-template-rows: auto 1fr;
+	grid-template-areas:
+		"topbar topbar"
+		"sidebar content";
+	min-height: 100vh;
+}
+
+.topbar {
+	grid-area: topbar;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.8em 1.5em;
+	border-bottom: 1px solid var(--border);
+	background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+}
+.brand { display: flex; align-items: baseline; gap: 0.6em; }
+.brand .logo { color: var(--cyan); font-size: 1.4em; }
+.brand .name { color: var(--cyan-2); font-size: 1.1em; font-weight: 700; letter-spacing: 0.15em; }
+.brand .tag { color: var(--fg-dim); font-size: 0.78em; }
+.topnav a { color: var(--fg); }
+
+.sidebar {
+	grid-area: sidebar;
+	border-right: 1px solid var(--border);
+	padding: 1.5em 1.2em;
+	background: var(--bg-2);
+}
+.sidebar .nav { list-style: none; padding: 0; margin: 0 0 2em 0; }
+.sidebar .nav li { margin: 0.2em 0; }
+.sidebar .nav a {
+	display: block;
+	padding: 0.4em 0.7em;
+	border-left: 2px solid transparent;
+	color: var(--fg-dim);
+}
+.sidebar .nav a:hover { color: var(--cyan-2); border-left-color: var(--cyan); text-decoration: none; }
+.sidebar .nav a.active { color: var(--cyan-2); border-left-color: var(--cyan); background: rgba(0, 212, 255, 0.05); }
+.sidebar h4 { margin-top: 0; }
+.sidebar .install pre.code { font-size: 11px; padding: 0.7em; }
+
+.content {
+	grid-area: content;
+	padding: 2em 3em;
+	max-width: 920px;
+}
+.content article { max-width: 780px; }
+.content footer { margin-top: 4em; color: var(--fg-dim); font-size: 0.85em; }
+
+@media (max-width: 800px) {
+	.layout {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			"topbar"
+			"sidebar"
+			"content";
+	}
+	.sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+	.content { padding: 1.5em; }
+}

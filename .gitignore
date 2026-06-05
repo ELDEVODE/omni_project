@@ -1,8 +1,75 @@
+# Dependencies
 node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
 dist/
 build/
+out/
+*.tsbuildinfo
+packages/*/dist/
+
+# Bun
+bun.lockb
+.bun
+
+# Expo
+.expo/
+.expo-shared/
+packages/mobile/ios/
+packages/mobile/android/
+packages/mobile/.expo/
+
+# Test coverage
+coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Environment
 .env
 .env.local
-*.log
+.env.*.local
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SSL/TLS
 *.pem
+*.key
+*.crt
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Model artifacts
+*.gguf
+*.bin
+models/
+.cache/
+.huggingface/
+
+# Misc
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Legacy code (pre-monorepo) — safe to delete after Phase 1
+_legacy/

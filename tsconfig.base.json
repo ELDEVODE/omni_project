@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["bun"],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@omnimesh/installer": ["./packages/installer/src/index.ts"],
+      "@omnimesh/installer/*": ["./packages/installer/src/*"],
+      "@omnimesh/protocol": ["./packages/protocol/src/index.ts"],
+      "@omnimesh/protocol/*": ["./packages/protocol/src/*"],
+      "@omnimesh/worker": ["./packages/worker/src/index.ts"],
+      "@omnimesh/worker/*": ["./packages/worker/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "**/node_modules", "**/dist", "**/build"]
+}

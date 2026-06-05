@@ -1,0 +1,131 @@
+{
+  "generated": "2026-06-04T12:44:20.533Z",
+  "rows": [
+    {
+      "capability": "LLM chat",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": true
+    },
+    {
+      "capability": "Embeddings",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Retrieval-augmented generation",
+      "host": true,
+      "worker": true,
+      "mobile": false,
+      "openai": false
+    },
+    {
+      "capability": "Fine-tuning",
+      "host": true,
+      "worker": true,
+      "mobile": false,
+      "openai": false
+    },
+    {
+      "capability": "Multimodal",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": true
+    },
+    {
+      "capability": "Image generation",
+      "host": true,
+      "worker": true,
+      "mobile": false,
+      "openai": false
+    },
+    {
+      "capability": "Video generation",
+      "host": true,
+      "worker": true,
+      "mobile": false,
+      "openai": false
+    },
+    {
+      "capability": "ASR (speech → text)",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "TTS (text → speech)",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Voice assistant (oww → asr → llm → tts)",
+      "host": false,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Translation",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Vision-language action",
+      "host": true,
+      "worker": true,
+      "mobile": false,
+      "openai": false
+    },
+    {
+      "capability": "OCR",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Image classification",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "P2P delegated inference",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Distributed model registry",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Model asset streaming",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    },
+    {
+      "capability": "Blind relays for NAT",
+      "host": true,
+      "worker": true,
+      "mobile": true,
+      "openai": false
+    }
+  ]
+}

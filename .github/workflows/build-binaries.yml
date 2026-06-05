@@ -1,0 +1,156 @@
+name: build-binaries
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build omni (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: darwin-arm64
+            out: omni-darwin-arm64
+            ext: tar.gz
+          - os: macos-13
+            target: darwin-x64
+            out: omni-darwin-x64
+            ext: tar.gz
+          - os: ubuntu-22.04
+            target: linux-x64
+            out: omni-linux-x64
+            ext: tar.gz
+          - os: ubuntu-22.04-arm
+            target: linux-arm64
+            out: omni-linux-arm64
+            ext: tar.gz
+          - os: windows-2022
+            target: windows-x64
+            out: omni-windows-x64
+            ext: zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Install
+        run: bun install --frozen-lockfile
+        timeout-minutes: 10
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun test
+
+      - name: Build binary
+        run: |
+          mkdir -p dist/${{ matrix.out }}
+          bun build packages/cli/src/index.ts \
+            --target=bun-${{ matrix.target }} \
+            --compile \
+            --outfile=dist/${{ matrix.out }}/omni${{ matrix.target == 'windows-x64' && '.exe' || '' }}
+
+      - name: Package tarball/zip
+        shell: bash
+        run: |
+          cd dist
+          if [ "${{ matrix.ext }}" = "zip" ]; then
+            zip -r ${{ matrix.out }}.zip ${{ matrix.out }}
+          else
+            tar -czf ${{ matrix.out }}.tar.gz ${{ matrix.out }}
+          fi
+
+      - name: Compute SHA-256
+        shell: bash
+        run: |
+          cd dist
+          if [ "${{ matrix.ext }}" = "zip" ]; then
+            sha256sum ${{ matrix.out }}.zip
+          else
+            sha256sum ${{ matrix.out }}.tar.gz
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: omni-${{ matrix.out }}
+          path: dist/${{ matrix.out }}.*
+          if-no-files-found: error
+
+  checksums:
+    name: Aggregate SHA-256 sums
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Write checksums.txt
+        shell: bash
+        run: |
+          cd artifacts
+          : > checksums.txt
+          for f in */**; do
+            [ -f "$f" ] || continue
+            sha256sum "$f" >> checksums.txt
+          done
+          cat checksums.txt
+
+      - name: Upload checksums.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: omni-checksums
+          path: artifacts/checksums.txt
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: [build, checksums]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        shell: bash
+        run: |
+          cd artifacts
+          for d in */; do
+            [ "$d" = "*/" ] && continue
+            [ "$d" = "checksums.txt/" ] && continue
+            if [ -d "$d" ]; then
+              for f in "$d"*; do
+                [ -f "$f" ] || continue
+                mv "$f" .
+              done
+              rmdir "$d" 2>/dev/null || true
+            fi
+          done
+          ls -la
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*
+            artifacts/checksums.txt
+          generate_release_notes: true
+          fail_on_unmatched_files: true
