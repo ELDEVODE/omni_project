@@ -40,9 +40,24 @@
 			},
 			"correctness": {
 				"useExhaustiveDependencies": "warn"
+			},
+			"performance": {
+				"noDelete": "warn"
 			}
 		}
 	},
+	"overrides": [
+		{
+			"include": ["**/*.test.ts", "**/test/**/*.ts"],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noDelete": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "single",
