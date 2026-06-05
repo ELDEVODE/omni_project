@@ -10,6 +10,12 @@ import type {
 } from '@omnimesh/installer'
 import type { Command } from '../router.ts'
 import { c } from '../ui/banner.ts'
+import {
+	type ProgressBar,
+	type Spinner,
+	progressBar,
+	spinner,
+} from '../ui/progress.ts'
 
 function resolvePlatform(): InstallPlatform {
 	const p = process.platform
@@ -49,6 +55,7 @@ async function runLocal(
 	const dryRun = Boolean(flags['dry-run'])
 	const yes = Boolean(flags.yes)
 	const noRestart = Boolean(flags['no-restart'])
+	const quiet = Boolean(flags.quiet)
 	const ctx: InstallContext = {
 		platform: resolvePlatform(),
 		cwd: process.cwd(),
@@ -67,15 +74,71 @@ async function runLocal(
 		console.log(`${c.dim}  pass --yes to skip this prompt${c.reset}`)
 	}
 	let lastEvent: InstallEvent | undefined
+	// When the user hasn't asked for --quiet we render an in-place progress
+	// bar that ticks as `progress` events arrive, plus a one-line spinner
+	// for the indeterminate "queued → running" gap.
+	const queueSpinner: Spinner | null = !quiet ? spinner('queued…') : null
+	const ui: { bar: ProgressBar | null; percent: number } = {
+		bar: null,
+		percent: 0,
+	}
 	runner.listen((s, ev) => {
 		if (s.installId !== state.installId) return
 		lastEvent = ev
-		if (flags.quiet && (ev.kind === 'progress' || ev.kind === 'log')) return
-		console.log(colorEvent(ev))
+		if (quiet) {
+			if (ev.kind === 'done' || ev.kind === 'fail' || ev.kind === 'cancel') {
+				console.log(colorEvent(ev))
+			}
+			return
+		}
+		if (ev.kind === 'start') {
+			if (queueSpinner) queueSpinner.succeed('starting install')
+			console.log(
+				`${c.cyan}→${c.reset} start ${ev.capability} (${ev.platform})`,
+			)
+			ui.bar = progressBar(100, { format: 'percent', showRate: false })
+		} else if (ev.kind === 'progress') {
+			if (ui.bar) {
+				ui.percent = ev.percent
+				ui.bar.tick(ui.percent, `${ev.step}: ${ev.message}`)
+			}
+		} else if (ev.kind === 'log') {
+			if (ui.bar) {
+				ui.bar.tick(ui.percent, `${ev.message}`)
+				ui.bar.stop()
+			}
+			console.log(`  ${c.dim}[${ev.level}]${c.reset} ${ev.message}`)
+			if (s.status === 'running') {
+				ui.bar = progressBar(100, { format: 'percent', showRate: false })
+				ui.bar.tick(ui.percent, '(resumed)')
+			}
+		} else if (ev.kind === 'done') {
+			if (ui.bar) {
+				ui.bar.tick(100, 'done')
+				ui.bar.done(`${ev.capability} ${ev.version} in ${ev.durationMs}ms`)
+			} else if (queueSpinner) {
+				queueSpinner.succeed(
+					`${ev.capability} ${ev.version} in ${ev.durationMs}ms`,
+				)
+			} else {
+				console.log(colorEvent(ev))
+			}
+		} else if (ev.kind === 'fail') {
+			if (ui.bar) ui.bar.fail(`${ev.capability}: ${ev.message}`)
+			else if (queueSpinner)
+				queueSpinner.fail(`${ev.capability}: ${ev.message}`)
+			else console.log(colorEvent(ev))
+		} else if (ev.kind === 'cancel') {
+			if (ui.bar) ui.bar.stop()
+			else if (queueSpinner) queueSpinner.warn('cancelled')
+			console.log(colorEvent(ev))
+		}
 	})
 	const deadline = Date.now() + 30 * 60_000
 	while (state.status === 'queued' || state.status === 'running') {
 		if (Date.now() > deadline) {
+			if (ui.bar) ui.bar.fail('timed out')
+			else if (queueSpinner) queueSpinner.fail('timed out')
 			console.error(`${c.red}✗${c.reset} install timed out after 30 minutes`)
 			return 124
 		}

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 const LANGS = [
@@ -20,9 +21,13 @@ export function TranslatePanel() {
 	const [output, setOutput] = useState('')
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const startedAtRef = useRef<number>(0)
+	const [startedAt, setStartedAt] = useState<number>(0)
 
 	const run = async () => {
 		if (!text.trim()) return
+		startedAtRef.current = Date.now()
+		setStartedAt(startedAtRef.current)
 		setRunning(true)
 		setError('')
 		setOutput('')
@@ -103,10 +108,15 @@ export function TranslatePanel() {
 						fontSize: 11,
 						cursor: 'pointer',
 						borderRadius: 4,
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 8,
 					}}
 				>
-					{running ? '…' : '▶ TRANSLATE'}
+					{running ? <Spinner size={11} /> : '▶ TRANSLATE'}
+					{running ? 'TRANSLATING' : ''}
 				</button>
+				{running && startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 			</div>
 			{error && (
 				<div style={{ color: '#ff6a00', marginTop: 8, fontSize: 11 }}>

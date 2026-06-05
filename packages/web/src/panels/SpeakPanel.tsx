@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function SpeakPanel() {
@@ -8,9 +9,11 @@ export function SpeakPanel() {
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
 	const [autoplay, setAutoplay] = useState(true)
+	const [startedAt, setStartedAt] = useState(0)
 
 	const run = async () => {
 		if (!text.trim()) return
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		try {
@@ -69,10 +72,15 @@ export function SpeakPanel() {
 						fontSize: 11,
 						cursor: 'pointer',
 						borderRadius: 4,
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 8,
 					}}
 				>
-					{running ? 'SYNTHESIZING…' : '▶ SPEAK'}
+					{running ? <Spinner size={11} /> : '▶'}
+					{running ? 'SYNTHESIZING' : 'SPEAK'}
 				</button>
+				{running && startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 				<label
 					style={{
 						display: 'flex',

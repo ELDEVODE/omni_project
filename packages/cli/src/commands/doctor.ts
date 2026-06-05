@@ -8,6 +8,12 @@ import {
 } from '@omnimesh/installer'
 import type { Command, CommandContext } from '../router.ts'
 import { c } from '../ui/banner.ts'
+import {
+	type ProgressBar,
+	type Spinner,
+	progressBar,
+	spinner,
+} from '../ui/progress.ts'
 
 export type DoctorStatus = 'ok' | 'warn' | 'fail'
 
@@ -344,19 +350,26 @@ export async function runChecks(
 ): Promise<DoctorReport> {
 	const rows: DoctorRow[] = []
 	const fixable: DoctorCheck[] = []
-	for (const check of buildChecks(registry)) {
+	const allChecks = buildChecks(registry)
+	const total = allChecks.length
+	for (let i = 0; i < allChecks.length; i++) {
+		const check = allChecks[i]
+		if (!check) continue
+		const phaseSpinner = spinner(`checking ${i + 1}/${total}: ${check.key}…`)
 		try {
 			const row = await check.run()
 			rows.push(row)
 			if (check.fixable && check.capabilityName && row.status !== 'ok') {
 				fixable.push(check)
 			}
+			phaseSpinner.succeed()
 		} catch (err) {
 			rows.push({
 				key: check.key,
 				value: `check failed: ${(err as Error).message}`,
 				status: 'fail',
 			})
+			phaseSpinner.fail()
 		}
 	}
 	let failed = 0
@@ -387,29 +400,61 @@ async function runFixes(
 			dryRun: false,
 			yes: true,
 		})
+		// The runner can take a while (e.g. `npm install @qvac/sdk` over
+		// a cold network), so we give each capability up to 5 minutes
+		// before timing out.
+		const queueSpinner: Spinner = spinner('queued…')
+		const ui: { bar: ProgressBar | null; percent: number } = {
+			bar: null,
+			percent: 0,
+		}
 		const final = await new Promise<'done' | 'fail' | 'cancel' | 'timeout'>(
 			(resolve) => {
 				const unsub = runner.listen((s, ev) => {
 					if (s.installId !== state.installId) return
-					if (ev.kind === 'done') {
+					if (ev.kind === 'start') {
+						queueSpinner.succeed('starting fix')
+						ui.bar = progressBar(100, { format: 'percent', showRate: false })
+					} else if (ev.kind === 'progress') {
+						if (ui.bar) {
+							ui.percent = ev.percent
+							ui.bar.tick(ui.percent, `${ev.step}: ${ev.message}`)
+						}
+					} else if (ev.kind === 'log') {
+						if (ui.bar) {
+							ui.bar.tick(ui.percent, ev.message)
+							ui.bar.stop()
+						}
+						// eslint-disable-next-line no-console
+						console.log(`  ${c.dim}[${ev.level}]${c.reset} ${ev.message}`)
+						if (s.status === 'running') {
+							ui.bar = progressBar(100, { format: 'percent', showRate: false })
+							ui.bar.tick(ui.percent, '(resumed)')
+						}
+					} else if (ev.kind === 'done') {
+						if (ui.bar)
+							ui.bar.done(`${name} ${ev.version} in ${ev.durationMs}ms`)
+						else queueSpinner.succeed(`${name} ${ev.version}`)
 						unsub()
 						resolve('done')
 					} else if (ev.kind === 'fail') {
+						if (ui.bar) ui.bar.fail(`${name}: ${ev.message}`)
+						else queueSpinner.fail(`${name}: ${ev.message}`)
 						unsub()
 						resolve('fail')
 					} else if (ev.kind === 'cancel') {
+						if (ui.bar) ui.bar.stop()
+						else queueSpinner.warn('cancelled')
 						unsub()
 						resolve('cancel')
-					} else if (ev.kind === 'log') {
-						// stream log messages as they arrive
-						// eslint-disable-next-line no-console
-						console.log(`  ${c.dim}${ev.message}${c.reset}`)
 					}
 				})
 				setTimeout(() => {
 					unsub()
+					if (ui.bar) ui.bar.fail('timed out')
+					else queueSpinner.fail('timed out')
 					resolve('timeout')
-				}, 60_000)
+				}, 5 * 60_000)
 			},
 		)
 		out.push({

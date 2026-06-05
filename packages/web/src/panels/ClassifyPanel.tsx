@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 type Score = { label: string; score: number }
@@ -13,9 +14,11 @@ export function ClassifyPanel() {
 	const [scores, setScores] = useState<Score[] | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const [startedAt, setStartedAt] = useState(0)
 
 	const run = async () => {
 		if (!text.trim()) return
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setScores(null)
@@ -95,10 +98,15 @@ export function ClassifyPanel() {
 					fontSize: 11,
 					cursor: 'pointer',
 					borderRadius: 4,
+					display: 'inline-flex',
+					alignItems: 'center',
+					gap: 8,
 				}}
 			>
-				{running ? 'CLASSIFYING…' : '▶ CLASSIFY'}
+				{running ? <Spinner size={11} /> : '▶'}
+				{running ? 'CLASSIFYING' : 'CLASSIFY'}
 			</button>
+			{running && startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 			{error && (
 				<div style={{ color: '#ff6a00', marginTop: 8, fontSize: 11 }}>
 					⚠ {error}

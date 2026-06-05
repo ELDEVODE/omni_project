@@ -3,6 +3,7 @@
 // snippet and a test request button.
 
 import { useEffect, useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { SERVER_URL, loadAuthToken } from '../lib/api.ts'
 
 type Model = { id: string; object: string }
@@ -12,11 +13,15 @@ export function OpenAIPanel() {
 	const [error, setError] = useState('')
 	const [reply, setReply] = useState('')
 	const [busy, setBusy] = useState(false)
+	const [loadingModels, setLoadingModels] = useState(true)
+	const [startedAt, setStartedAt] = useState(0)
+	const [firstTokenMs, setFirstTokenMs] = useState<number | null>(null)
 	const [prompt, setPrompt] = useState('Say hello to the OmniMesh mesh.')
 
 	const baseUrl = SERVER_URL.replace(':3005', ':11434')
 
 	const refresh = async () => {
+		setLoadingModels(true)
 		try {
 			const r = await fetch(`${baseUrl}/v1/models`)
 			if (!r.ok) throw new Error(`HTTP ${r.status}`)
@@ -24,6 +29,8 @@ export function OpenAIPanel() {
 			setModels(j.data)
 		} catch (err) {
 			setError((err as Error).message)
+		} finally {
+			setLoadingModels(false)
 		}
 	}
 
@@ -32,6 +39,8 @@ export function OpenAIPanel() {
 	}, [])
 
 	const testRequest = async () => {
+		setStartedAt(Date.now())
+		setFirstTokenMs(null)
 		setBusy(true)
 		setReply('')
 		try {
@@ -56,6 +65,9 @@ export function OpenAIPanel() {
 				if (done) break
 				buf += decoder.decode(value, { stream: true })
 				setReply(buf)
+				if (firstTokenMs === null) {
+					setFirstTokenMs(Date.now() - startedAt)
+				}
 			}
 		} catch (err) {
 			setError((err as Error).message)
@@ -116,7 +128,16 @@ export function OpenAIPanel() {
 				>
 					MODELS
 				</div>
-				<div style={{ fontSize: 11, fontFamily: 'monospace' }}>
+				<div
+					style={{
+						fontSize: 11,
+						fontFamily: 'monospace',
+						display: 'flex',
+						alignItems: 'center',
+						gap: 8,
+					}}
+				>
+					{loadingModels ? <Spinner size={9} /> : null}
 					{models.length === 0
 						? '(none registered)'
 						: models.map((m) => m.id).join(', ')}
@@ -198,10 +219,26 @@ export function OpenAIPanel() {
 						color: 'var(--cyan)',
 						cursor: 'pointer',
 						fontSize: 11,
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 8,
 					}}
 				>
-					{busy ? 'streaming…' : 'POST /v1/chat/completions'}
+					{busy ? <Spinner size={10} /> : null}
+					{busy ? 'streaming' : 'POST /v1/chat/completions'}
 				</button>
+				{busy && startedAt > 0 ? <Elapsed from={startedAt} /> : null}
+				{firstTokenMs !== null ? (
+					<span
+						style={{
+							fontFamily: 'monospace',
+							fontSize: 10,
+							color: 'var(--green)',
+						}}
+					>
+						first token in {firstTokenMs}ms
+					</span>
+				) : null}
 				{reply && (
 					<pre
 						style={{

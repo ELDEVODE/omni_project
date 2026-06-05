@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Mic, Send, SpeakerOff, SpeakerOn, Stop } from '../components/Icons.tsx'
+import { Elapsed } from '../components/Progress.tsx'
 import { Thinking } from '../components/Thinking.tsx'
 import { api } from '../lib/api.ts'
 import { playAudioResponse } from '../lib/audio.ts'
@@ -10,6 +11,7 @@ export function ChatPanel() {
 	const [turns, setTurns] = useState<ChatTurn[]>([])
 	const [input, setInput] = useState('')
 	const [streaming, setStreaming] = useState(false)
+	const [streamingStartedAt, setStreamingStartedAt] = useState(0)
 	const [isRecording, setIsRecording] = useState(false)
 	const [recStatus, setRecStatus] = useState('VOICE IDLE')
 	const [ttsEnabled, setTtsEnabled] = useState(true)
@@ -34,6 +36,7 @@ export function ChatPanel() {
 		if (!input.trim() || streaming) return
 		const prompt = input
 		setInput('')
+		setStreamingStartedAt(Date.now())
 		setStreaming(true)
 		setError('')
 		setTurns((t) => [
@@ -212,7 +215,18 @@ export function ChatPanel() {
 						)}
 					</div>
 				))}
-				{streaming && <Thinking />}
+				{streaming && (
+					<div
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							gap: 10,
+						}}
+					>
+						<Thinking />
+						<Elapsed from={streamingStartedAt} />
+					</div>
+				)}
 				{error && (
 					<div style={{ color: '#ff6a00', fontSize: 11, marginTop: 8 }}>
 						⚠ {error}

@@ -649,3 +649,39 @@ button:disabled {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Progress primitives — spinner, indeterminate bar sweep, blink glyph */
+/* ------------------------------------------------------------------ */
+@keyframes hudSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.hud-spinner {
+  animation: hudSpin 0.8s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+@keyframes hudBarSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+.hud-bar-sweep {
+  width: 25%;
+  animation: hudBarSweep 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes hudPulseGlyph {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

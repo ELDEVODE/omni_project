@@ -1,6 +1,15 @@
+import { Bar, Elapsed, Spinner } from '@/components/Progress.tsx'
 import { useQVACModels } from '@/hooks/useQVACChat.ts'
 import { api } from '@/lib/api.ts'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+type InstallState = {
+	installId: string
+	capability: string
+	status: 'queued' | 'running' | 'done' | 'fail' | 'cancel'
+	percent: number
+	message: string
+}
 
 const AVAILABLE_MODELS = [
 	{
@@ -40,22 +49,78 @@ export function ModelsPanel() {
 	const [pulling, setPulling] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [success, setSuccess] = useState<string | null>(null)
+	const [pullProgress, setPullProgress] = useState<{
+		installId: string
+		percent: number
+		message: string
+		startedAt: number
+	} | null>(null)
+
+	// Poll the host's /api/installs/:id endpoint while a pull is in flight
+	// so the in-card progress bar reflects the runner's live state.
+	useEffect(() => {
+		if (!pullProgress) return
+		const id = pullProgress.installId
+		const t = setInterval(async () => {
+			try {
+				const res = await fetch(`/api/installs/${encodeURIComponent(id)}`)
+				if (!res.ok) return
+				const s = (await res.json()) as InstallState
+				setPullProgress((p) =>
+					p
+						? {
+								installId: s.installId,
+								percent: s.percent,
+								message: s.message,
+								startedAt: p.startedAt,
+							}
+						: p,
+				)
+				if (s.status === 'done') {
+					setSuccess(`Pulled ${pulling}`)
+					setPulling(null)
+					setPullProgress(null)
+					void load()
+				} else if (s.status === 'fail' || s.status === 'cancel') {
+					setError(s.message || `pull ${s.status}`)
+					setPulling(null)
+					setPullProgress(null)
+				}
+			} catch {}
+		}, 500)
+		return () => clearInterval(t)
+	}, [pullProgress, pulling, load])
 
 	const handlePull = async (alias: string) => {
 		setError(null)
 		setSuccess(null)
 		setPulling(alias)
 		try {
-			await fetch('/api/models/pull', {
+			const res = await fetch('/api/models/pull', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ modelId: alias }),
 			})
-			setSuccess(`Pull started for ${alias}`)
-			await load()
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`)
+			}
+			const body = (await res.json()) as { installId?: string }
+			if (body.installId) {
+				setPullProgress({
+					installId: body.installId,
+					percent: 0,
+					message: 'queued',
+					startedAt: Date.now(),
+				})
+			} else {
+				// Endpoint returned a non-install response; reload after a
+				// short delay to pick up the new model.
+				setSuccess(`Pull started for ${alias}`)
+				setPulling(null)
+				setTimeout(() => void load(), 2000)
+			}
 		} catch (err) {
 			setError((err as Error).message)
-		} finally {
 			setPulling(null)
 		}
 	}
@@ -161,9 +226,17 @@ export function ModelsPanel() {
 			>
 				{loading ? (
 					<div
-						style={{ textAlign: 'center', color: 'var(--cyan)', padding: 32 }}
+						style={{
+							textAlign: 'center',
+							color: 'var(--cyan)',
+							padding: 32,
+							display: 'flex',
+							justifyContent: 'center',
+							alignItems: 'center',
+							gap: 10,
+						}}
 					>
-						Loading models from /v1/models…
+						<Spinner size={12} label="Loading models from /v1/models" />
 					</div>
 				) : models.length === 0 ? (
 					<div
@@ -217,6 +290,7 @@ export function ModelsPanel() {
 								loaded={models.some((lm) => lm.id === m.alias)}
 								onPull={handlePull}
 								pulling={pulling === m.alias}
+								pullProgress={pulling === m.alias ? pullProgress : null}
 							/>
 						))}
 					</div>
@@ -296,11 +370,18 @@ function RegistryCard({
 	loaded,
 	onPull,
 	pulling,
+	pullProgress,
 }: {
 	model: (typeof AVAILABLE_MODELS)[0]
 	loaded: boolean
 	onPull: (alias: string) => void
 	pulling: boolean
+	pullProgress: {
+		installId: string
+		percent: number
+		message: string
+		startedAt: number
+	} | null
 }) {
 	return (
 		<div
@@ -353,17 +434,18 @@ function RegistryCard({
 						LOADED
 					</span>
 				) : pulling ? (
-					<span
+					<div
 						style={{
+							display: 'flex',
+							alignItems: 'center',
+							gap: 6,
 							color: 'var(--cyan)',
 							fontSize: 10,
-							background: 'rgba(0,212,255,0.1)',
-							padding: '2px 6px',
-							borderRadius: 3,
 						}}
 					>
-						PULLING…
-					</span>
+						<Spinner size={10} />
+						<span>PULLING</span>
+					</div>
 				) : (
 					<button
 						onClick={() => onPull(model.alias)}
@@ -382,6 +464,26 @@ function RegistryCard({
 					</button>
 				)}
 			</div>
+			{pulling && pullProgress ? (
+				<div
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 4,
+					}}
+				>
+					<Bar
+						percent={pullProgress.percent}
+						label={pullProgress.message}
+						right={
+							<>
+								{pullProgress.percent.toFixed(0)}%{'\u00A0\u00A0'}
+								<Elapsed from={pullProgress.startedAt} />
+							</>
+						}
+					/>
+				</div>
+			) : null}
 		</div>
 	)
 }

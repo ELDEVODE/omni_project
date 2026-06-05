@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Bar, Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 type ImgResult = {
@@ -16,9 +17,11 @@ export function ImageGenPanel() {
 	const [result, setResult] = useState<ImgResult | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const [startedAt, setStartedAt] = useState(0)
 
 	const run = async () => {
 		if (!prompt.trim()) return
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setProgress([])
@@ -84,27 +87,24 @@ export function ImageGenPanel() {
 						fontSize: 11,
 						cursor: 'pointer',
 						borderRadius: 4,
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 8,
 					}}
 				>
-					{running ? 'GENERATING…' : '▶ GENERATE'}
+					{running ? <Spinner size={11} /> : '▶'}
+					{running ? 'GENERATING' : 'GENERATE'}
 				</button>
 			</div>
-			{progress.length > 0 && (
-				<div
-					style={{
-						marginTop: 8,
-						fontSize: 10,
-						fontFamily: 'var(--font-mono)',
-						color: 'var(--cyan)',
-						maxHeight: 80,
-						overflowY: 'auto',
-					}}
-				>
-					{progress.map((p, i) => (
-						<div key={`img-progress-${i}-${p}`}>→ {p}</div>
-					))}
+			{running ? (
+				<div style={{ marginTop: 12 }}>
+					<Bar
+						percent={null}
+						label={progress[progress.length - 1] ?? 'requesting generation…'}
+						right={startedAt > 0 ? <Elapsed from={startedAt} /> : null}
+					/>
 				</div>
-			)}
+			) : null}
 			{error && (
 				<div style={{ color: '#ff6a00', marginTop: 8, fontSize: 11 }}>
 					⚠ {error}

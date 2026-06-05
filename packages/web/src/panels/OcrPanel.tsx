@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function OcrPanel() {
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const [startedAt, setStartedAt] = useState(0)
 	const [result, setResult] = useState<{
 		text: string
 		lines: number
@@ -11,6 +13,7 @@ export function OcrPanel() {
 	} | null>(null)
 
 	const onFile = async (file: File) => {
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setResult(null)
@@ -99,10 +102,15 @@ export function OcrPanel() {
 			)}
 			{running && (
 				<div
-					className="hud-label"
-					style={{ marginTop: 8, fontSize: 10, color: 'var(--cyan)' }}
+					style={{
+						marginTop: 8,
+						display: 'flex',
+						alignItems: 'center',
+						gap: 10,
+					}}
 				>
-					SCANNING…
+					<Spinner size={11} label="SCANNING" />
+					{startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 				</div>
 			)}
 		</div>

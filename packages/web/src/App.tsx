@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArcReactor } from './components/ArcReactor.tsx'
 import { SpeakerOff, SpeakerOn } from './components/Icons.tsx'
 import { Panel, PanelBar } from './components/Panel.tsx'
+import { Spinner } from './components/Progress.tsx'
 import { useQVACModels } from './hooks/useQVACChat.ts'
 import { ChatPanel } from './panels/ChatPanel.tsx'
 import { ClassifyPanel } from './panels/ClassifyPanel.tsx'
@@ -299,8 +300,17 @@ export default function App() {
 				}}
 			>
 				{modelsLoading ? (
-					<span className="hud-label" style={{ opacity: 0.4, fontSize: 9 }}>
-						Loading models…
+					<span
+						className="hud-label"
+						style={{
+							opacity: 0.6,
+							fontSize: 9,
+							display: 'inline-flex',
+							alignItems: 'center',
+							gap: 6,
+						}}
+					>
+						<Spinner size={8} /> Loading models…
 					</span>
 				) : models.length === 0 ? (
 					<span className="hud-label" style={{ opacity: 0.4, fontSize: 9 }}>

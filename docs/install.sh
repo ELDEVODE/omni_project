@@ -13,6 +13,91 @@ set -euo pipefail
 REPO="ELDEVODE/omni_project"
 BINARY="omni"
 
+# ─── ANSI helpers ─────────────────────────────────────────────
+# We use simple ANSI escapes for the spinner + progress bar. All output goes
+# to stderr so users can `| tee` the script and still capture clean stdout.
+
+_C='\033[0m'      # reset
+_B='\033[1m'      # bold
+_D='\033[2m'      # dim
+_CY='\033[36m'    # cyan
+_GR='\033[32m'    # green
+_YE='\033[33m'    # yellow
+_RD='\033[31m'    # red
+_CR='\r'
+_CL='\033[2K'
+_HC='\033[?25l'   # hide cursor
+_SC='\033[?25h'   # show cursor
+
+is_tty() {
+  [ -t 2 ] && [ -z "${NO_COLOR:-}" ]
+}
+
+# ─── Spinner ──────────────────────────────────────────────────
+# The spinner runs as a background subshell that prints a rotating glyph
+# and a label, redrawing the same line via \r + clear-line. We trap EXIT
+# to make sure we always restore the cursor.
+_SPINNER_PID=""
+_SPINNER_FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+
+spinner_start() {
+  local text="$1"
+  if is_tty; then
+    printf '%s' "$_HC" >&2
+    (
+      i=0
+      while :; do
+        glyph="${_SPINNER_FRAMES[$((i % 10))]}"
+        printf '%s%s %s%s%s %s' "$_CL" "$_CR" "$_B" "$_CY" "$glyph" "$_C" >&2
+        printf '%s' "$text" >&2
+        i=$((i + 1))
+        sleep 0.08
+      done
+    ) &
+    _SPINNER_PID=$!
+  else
+    printf '  %s%s•%s %s\n' "$_B" "$_CY" "$_C" "$text" >&2
+  fi
+}
+
+_spinner_stop() {
+  local ok="${1:-1}"
+  if is_tty && [ -n "$_SPINNER_PID" ]; then
+    kill "$_SPINNER_PID" 2>/dev/null || true
+    wait "$_SPINNER_PID" 2>/dev/null || true
+    _SPINNER_PID=""
+    if [ "$ok" = "1" ]; then
+      printf '%s%s %s✓%s done\n' "$_CL" "$_CR" "$_B" "$_GR" >&2
+    else
+      printf '%s%s %s✗%s failed\n' "$_CL" "$_CR" "$_B" "$_RD" >&2
+    fi
+  fi
+}
+
+spinner_ok()   { _spinner_stop 1; }
+spinner_fail() { _spinner_stop 0; }
+
+cleanup_spinner() {
+  if [ -n "$_SPINNER_PID" ]; then
+    kill "$_SPINNER_PID" 2>/dev/null || true
+    wait "$_SPINNER_PID" 2>/dev/null || true
+  fi
+  printf '%s' "$_SC" >&2
+}
+trap cleanup_spinner EXIT
+
+# ─── progress_bar_download ────────────────────────────────────
+# Wrapper around `curl` that uses curl's built-in progress bar (-#) on a
+# TTY. On non-TTY (CI, piped) we just silence curl's own status output.
+progress_bar_download() {
+  local url="$1" out="$2"
+  if is_tty; then
+    curl -fL --connect-timeout 15 -# -o "$out" "$url" >&2
+  else
+    curl -fsSL --connect-timeout 15 -o "$out" "$url"
+  fi
+}
+
 # ─── Parse args ───────────────────────────────────────────────
 SYSTEM_INSTALL=0
 for arg in "$@"; do
@@ -65,14 +150,16 @@ fi
 if [ -n "${OMNI_VERSION:-}" ]; then
   LATEST="${OMNI_VERSION#v}"
 else
-  echo "→ Fetching latest omni release..."
+  spinner_start "fetching latest omni release"
   LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
            | grep '"tag_name"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
   if [ -z "$LATEST" ]; then
+    spinner_fail
     echo "Could not determine latest version of ${REPO}." >&2
     echo "Check your network connection or specify OMNI_VERSION=v0.1.0" >&2
     exit 1
   fi
+  spinner_ok
 fi
 
 # ─── Build URLs ──────────────────────────────────────────────
@@ -84,23 +171,31 @@ SUMS_URL="${BASE_URL}/checksums.txt"
 
 # ─── Prepare temp dir ────────────────────────────────────────
 TMP=$(mktemp -d)
-trap "rm -rf $TMP" EXIT
+TMP_CLEANUP="rm -rf $TMP"
+trap 'cleanup_spinner; eval "$TMP_CLEANUP"' EXIT
 
-echo "→ Downloading omni v${LATEST} (${OS}-${ARCH})..."
-if ! curl -fsSL "$ARCHIVE_URL" -o "$TMP/omni.${EXT}"; then
+echo "  ${_B}→${_C} installing omni v${LATEST} (${OS}-${ARCH})" >&2
+
+# ─── Download with progress bar ──────────────────────────────
+spinner_start "downloading omni v${LATEST}"
+if ! progress_bar_download "$ARCHIVE_URL" "$TMP/omni.${EXT}"; then
+  spinner_fail
   echo "Download failed: $ARCHIVE_URL" >&2
   echo "Check that v${LATEST} has binaries published for ${OS}-${ARCH}." >&2
   exit 1
 fi
+spinner_ok
 
 # ─── Verify SHA-256 ─────────────────────────────────────────
-echo "→ Verifying SHA-256..."
-if ! curl -fsSL "$SUMS_URL" -o "$TMP/checksums.txt"; then
-  echo "WARNING: checksums.txt not found for v${LATEST}; skipping verification." >&2
+spinner_start "verifying SHA-256"
+if ! curl -fsSL "$SUMS_URL" -o "$TMP/checksums.txt" 2>/dev/null; then
+  spinner_ok
+  echo "  ${_YE}!${_C} checksums.txt not found for v${LATEST}; skipping verification" >&2
 else
   EXPECTED=$(grep -E "(^| )${BINARY}-${OS}-${ARCH}\.${EXT}$" "$TMP/checksums.txt" | head -1 | awk '{print $1}')
   if [ -z "$EXPECTED" ]; then
-    echo "WARNING: no checksum entry for ${BINARY}-${OS}-${ARCH}.${EXT}; skipping." >&2
+    spinner_ok
+    echo "  ${_YE}!${_C} no checksum entry for ${BINARY}-${OS}-${ARCH}.${EXT}; skipping" >&2
   else
     ACTUAL=""
     if command -v sha256sum >/dev/null 2>&1; then
@@ -108,24 +203,28 @@ else
     elif command -v shasum >/dev/null 2>&1; then
       ACTUAL=$(shasum -a 256 "$TMP/omni.${EXT}" | awk '{print $1}')
     else
+      spinner_fail
       echo "No sha256sum or shasum found; cannot verify." >&2
       exit 1
     fi
     if [ "$EXPECTED" != "$ACTUAL" ]; then
+      spinner_fail
       echo "SHA-256 mismatch!" >&2
       echo "  expected: $EXPECTED" >&2
       echo "  actual:   $ACTUAL" >&2
       exit 1
     fi
-    echo "  ✓ checksum ok"
+    spinner_ok
   fi
 fi
 
 # ─── Extract ─────────────────────────────────────────────────
+spinner_start "extracting"
 case "$EXT" in
   tar.gz) tar -xzf "$TMP/omni.${EXT}" -C "$TMP" ;;
   zip)    unzip -q "$TMP/omni.${EXT}" -d "$TMP" ;;
 esac
+spinner_ok
 
 EXE="omni"
 [ "$OS" = "windows" ] && EXE="omni.exe"

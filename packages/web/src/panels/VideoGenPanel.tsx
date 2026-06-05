@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Bar, Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function VideoGenPanel() {
@@ -10,9 +11,11 @@ export function VideoGenPanel() {
 	} | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const [startedAt, setStartedAt] = useState(0)
 
 	const run = async () => {
 		if (!prompt.trim()) return
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setProgress(0)
@@ -64,29 +67,33 @@ export function VideoGenPanel() {
 						fontSize: 11,
 						cursor: 'pointer',
 						borderRadius: 4,
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 8,
 					}}
 				>
-					{running ? 'GENERATING…' : '▶ GENERATE'}
+					{running ? <Spinner size={11} /> : '▶'}
+					{running ? 'GENERATING' : 'GENERATE'}
 				</button>
 			</div>
 			{(running || progress > 0) && (
 				<div
 					style={{
 						marginTop: 12,
-						height: 4,
-						background: 'rgba(0,20,40,0.6)',
-						border: '1px solid rgba(0,212,255,0.2)',
-						borderRadius: 2,
-						overflow: 'hidden',
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 6,
 					}}
 				>
-					<div
-						style={{
-							width: `${Math.round(progress * 100)}%`,
-							height: '100%',
-							background: 'var(--cyan)',
-							transition: 'width 0.2s',
-						}}
+					<Bar
+						percent={Math.round(progress * 100)}
+						label="image generation"
+						right={
+							<>
+								{Math.round(progress * 100)}%{'\u00A0\u00A0'}
+								{startedAt > 0 ? <Elapsed from={startedAt} /> : null}
+							</>
+						}
 					/>
 				</div>
 			)}

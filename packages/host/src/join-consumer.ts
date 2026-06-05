@@ -8,19 +8,33 @@ if (!providerPublicKey) {
 	process.exit(1)
 }
 
+// bootProgress(phase, message) — mirror of the one in index.ts so the
+// `omni join` stepper can advance the same way. Format MUST stay
+// `[boot] <phase>: <message>`.
+function bootProgress(phase: string, message: string): void {
+	process.stderr.write(`[boot] ${phase}: ${message}\n`)
+}
+
 async function startConsumer(): Promise<void> {
 	log.info('Starting QVAC consumer…', {
 		providerPublicKey: `${providerPublicKey.slice(0, 16)}…`,
 	})
 
+	bootProgress('sdk', 'loading @qvac/sdk…')
 	const sdk = await tryLoadQVAC()
 	if (!sdk) {
+		bootProgress('sdk', 'failed (@qvac/sdk not installed)')
 		log.error('@qvac/sdk not installed. Cannot run as consumer.')
 		process.exit(1)
 	}
+	bootProgress('sdk', 'loaded')
 
 	const consumer = makeConsumer(sdk)
 
+	bootProgress(
+		'connect',
+		`dialling provider ${providerPublicKey.slice(0, 16)}…`,
+	)
 	try {
 		await consumer.loadModel({
 			modelId: 'default',
@@ -30,11 +44,14 @@ async function startConsumer(): Promise<void> {
 				fallbackToLocal: true,
 			},
 		})
+		bootProgress('connect', 'delegated model ready')
 		log.info('Delegated model loaded successfully')
 	} catch (err) {
+		bootProgress('connect', `failed: ${(err as Error).message}`)
 		log.warn(`Failed to load delegated model: ${(err as Error).message}`)
 	}
 
+	bootProgress('ready', 'consumer online')
 	log.info('Consumer ready. Press Ctrl+C to stop.')
 	process.stdin.resume()
 }

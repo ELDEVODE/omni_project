@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function EmbeddingsPanel() {
@@ -11,14 +12,22 @@ export function EmbeddingsPanel() {
 	} | null>(null)
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
+	const [startedAt, setStartedAt] = useState(0)
+	const [progress, setProgress] = useState<{
+		done: number
+		total: number
+	} | null>(null)
 
 	const run = async () => {
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setOutput(null)
 		try {
 			const texts = input.split('\n').filter((s) => s.trim())
+			setProgress({ done: 0, total: texts.length })
 			const res = await api.embeddings('embed', texts)
+			setProgress({ done: texts.length, total: texts.length })
 			if (res.data) {
 				const vectors = res.data.map((d) => d.embedding)
 				setOutput({
@@ -32,6 +41,7 @@ export function EmbeddingsPanel() {
 			setError((err as Error).message)
 		} finally {
 			setRunning(false)
+			setProgress(null)
 		}
 	}
 
@@ -68,10 +78,32 @@ export function EmbeddingsPanel() {
 					fontSize: 11,
 					cursor: running ? 'wait' : 'pointer',
 					borderRadius: 4,
+					display: 'inline-flex',
+					alignItems: 'center',
+					gap: 8,
 				}}
 			>
-				{running ? 'EMBEDDING…' : '▶ EMBED'}
+				{running ? <Spinner size={11} /> : '▶'}
+				{running ? 'EMBEDDING' : 'EMBED'}
 			</button>
+			{running && progress ? (
+				<div
+					style={{
+						marginTop: 8,
+						display: 'flex',
+						alignItems: 'center',
+						gap: 10,
+					}}
+				>
+					<span
+						className="hud-label"
+						style={{ fontSize: 10, color: 'var(--cyan)' }}
+					>
+						embedding {progress.done}/{progress.total}
+					</span>
+					{startedAt > 0 ? <Elapsed from={startedAt} /> : null}
+				</div>
+			) : null}
 			{error && (
 				<div style={{ color: '#ff6a00', marginTop: 8, fontSize: 11 }}>
 					⚠ {error}

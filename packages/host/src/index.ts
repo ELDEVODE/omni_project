@@ -3,11 +3,24 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { InstallRunner, defaultRegistry } from '@omnimesh/installer'
+import type { RunState } from '@omnimesh/installer'
 import { type HostConfig, loadConfig } from './config.ts'
 import { log } from './log.ts'
 import { loadQVACConfig } from './qvac/config.ts'
 import { QVACProvider } from './qvac/provider.ts'
 import { ModelRegistry } from './qvac/registry.ts'
+
+// One host-level install runner. The CLI's `omni models pull` will POST
+// to /api/installs (TODO) and the dashboard can poll /api/installs/:id
+// to drive its live progress bar.
+const installRunner = new InstallRunner(defaultRegistry)
+function runnerStates(): RunState[] {
+	return installRunner.list()
+}
+function getInstallState(id: string): RunState | undefined {
+	return installRunner.get(id)
+}
 
 function commandExists(cmd: string): boolean {
 	const paths = (process.env.PATH ?? '').split(path.delimiter)
@@ -19,6 +32,40 @@ function commandExists(cmd: string): boolean {
 		} catch {}
 	}
 	return false
+}
+
+// bootProgress(phase, message) — emits a single line on stderr in the
+// `omni host` stepper format so the parent CLI can advance its stepper
+// without depending on the dashboard being up yet.
+//
+// Format: `[boot] <phase>: <message>` on its own line. The CLI's host
+// command parses this regex to know which step to complete and what
+// final label to show.
+function bootProgress(phase: string, message: string): void {
+	process.stderr.write(`[boot] ${phase}: ${message}\n`)
+}
+
+// pollUntilPort — wait for an HTTP endpoint to start returning 200.
+// Used to replace the fixed `setTimeout(2000)` in the OpenAI-compat
+// spawn block so the boot stepper can show real progress.
+async function pollUntilPort(
+	host: string,
+	port: number,
+	timeoutMs: number,
+): Promise<void> {
+	const start = Date.now()
+	const url = `http://${host}:${port}/v1/models`
+	while (Date.now() - start < timeoutMs) {
+		try {
+			const res = await fetch(url, {
+				signal: AbortSignal.timeout(500),
+			})
+			if (res.ok || res.status === 401) return
+		} catch {
+			// not ready yet
+		}
+		await new Promise((r) => setTimeout(r, 200))
+	}
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -144,6 +191,7 @@ export async function startHost(
 
 	const seed = crypto.randomBytes(32).toString('hex')
 
+	bootProgress('qvac', 'generating keypair…')
 	const provider = new QVACProvider()
 	await provider.start({
 		seed,
@@ -152,6 +200,7 @@ export async function startHost(
 		cacheDirectory: qvacCfg.cacheDirectory,
 		loggerLevel: qvacCfg.loggerLevel,
 	})
+	bootProgress('qvac', `online ${provider.publicKey || '(sdk missing)'}`)
 
 	const registry = new ModelRegistry(provider.getSDK())
 
@@ -163,7 +212,9 @@ export async function startHost(
 		log.warn(
 			'qvac binary not found in PATH — OpenAI-compat server disabled. Run `omni install qvac` to enable.',
 		)
+		bootProgress('openai', 'skipped (qvac binary not installed)')
 	} else {
+		bootProgress('openai', `spawning qvac serve openai on :${openaiPort}…`)
 		try {
 			openaiServer = spawn(
 				'qvac',
@@ -185,13 +236,16 @@ export async function startHost(
 			openaiServer.on('error', (err) => {
 				log.warn(`qvac serve openai exited: ${err.message}`)
 			})
-			await new Promise((resolve) => setTimeout(resolve, 2000))
-			log.info(`OpenAI-compat server started on ${openaiUrl}`)
+			bootProgress('openai', 'waiting for :11434 to respond…')
+			await pollUntilPort('127.0.0.1', openaiPort, 15_000)
+			bootProgress('openai', `ready on ${openaiUrl}`)
 		} catch (err) {
+			bootProgress('openai', `failed: ${(err as Error).message}`)
 			log.warn(`Failed to start qvac serve openai: ${(err as Error).message}`)
 		}
 	}
 
+	bootProgress('dashboard', `binding :${cfg.port}…`)
 	const sslOptions = loadSslOptions()
 
 	const server = Bun.serve({
@@ -242,6 +296,30 @@ export async function startHost(
 					{ headers: { 'Access-Control-Allow-Origin': '*' } },
 				)
 			}
+			if (url.pathname === '/api/installs' && req.method === 'GET') {
+				// Exposes the in-memory install runner state so the
+				// dashboard can poll a single in-flight `models pull`
+				// install for its live progress bar.
+				return Response.json(
+					{ installs: runnerStates() },
+					{ headers: { 'Access-Control-Allow-Origin': '*' } },
+				)
+			}
+			if (url.pathname.startsWith('/api/installs/') && req.method === 'GET') {
+				const id = decodeURIComponent(
+					url.pathname.slice('/api/installs/'.length),
+				)
+				const found = getInstallState(id)
+				if (!found) {
+					return new Response(JSON.stringify({ error: 'not_found' }), {
+						status: 404,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				}
+				return Response.json(found, {
+					headers: { 'Access-Control-Allow-Origin': '*' },
+				})
+			}
 			if (url.pathname === '/api/qvac/provider' && req.method === 'GET') {
 				return Response.json(
 					{
@@ -261,6 +339,7 @@ export async function startHost(
 	const baseUrl = `${proto}://${cfg.host}:${cfg.port}`
 	const displayUrl = state.secret ? `${baseUrl}?token=${state.secret}` : baseUrl
 
+	bootProgress('dashboard', `ready — ${displayUrl}`)
 	log.info(`🚀 OmniMesh host online — ${displayUrl}`)
 	log.info(
 		`🛰  QVAC provider — ${provider.publicKey || 'not running (install @qvac/sdk)'}`,

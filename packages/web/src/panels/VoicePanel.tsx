@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function VoicePanel() {
 	const [input, setInput] = useState('What is the meaning of life?')
 	const [running, setRunning] = useState(false)
 	const [phases, setPhases] = useState<string[]>([])
+	const [startedAt, setStartedAt] = useState(0)
 	const [result, setResult] = useState<{
 		transcript: string
 		reply: string
@@ -13,6 +15,7 @@ export function VoicePanel() {
 
 	const run = async () => {
 		if (!input.trim()) return
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setPhases([])
@@ -95,6 +98,7 @@ export function VoicePanel() {
 					}}
 				/>
 				<button
+					type="button"
 					onClick={run}
 					disabled={running || !input.trim()}
 					style={{
@@ -107,18 +111,33 @@ export function VoicePanel() {
 						borderRadius: 4,
 					}}
 				>
-					{running ? 'PIPELINE…' : '▶ RUN'}
+					{running ? <Spinner size={11} /> : '▶'}
+					{running ? 'PIPELINE' : 'RUN'}
 				</button>
+				{running && startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 			</div>
 			{phases.length > 0 && (
 				<div
 					style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 10 }}
 				>
-					{phases.map((p, i) => (
-						<div key={`voice-phase-${i}-${p}`} style={{ color: 'var(--cyan)' }}>
-							→ {p}
-						</div>
-					))}
+					{phases.map((p, i) => {
+						const isLatest = i === phases.length - 1
+						return (
+							<div
+								key={`voice-phase-${i}-${p}`}
+								style={{
+									color:
+										isLatest && running ? 'var(--cyan)' : 'rgba(0,212,255,0.5)',
+									display: 'flex',
+									alignItems: 'center',
+									gap: 6,
+								}}
+							>
+								{isLatest && running ? <Spinner size={8} /> : <span>→</span>}
+								{p}
+							</div>
+						)
+					})}
 				</div>
 			)}
 			{error && (

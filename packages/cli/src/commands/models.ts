@@ -1,5 +1,6 @@
 import type { Command, CommandContext } from '../router.ts'
 import { c } from '../ui/banner.ts'
+import { spinner } from '../ui/progress.ts'
 
 async function listModels(ctx: CommandContext): Promise<number> {
 	const provider =
@@ -9,19 +10,29 @@ async function listModels(ctx: CommandContext): Promise<number> {
 	const url = new URL(baseUrl)
 	if (secret) url.searchParams.set('token', secret)
 
+	const spin = spinner('loading models from host…')
 	try {
 		const res = await fetch(url.toString(), {
 			headers: provider ? { 'X-Provider-Public-Key': provider } : {},
+			signal: AbortSignal.timeout(5_000),
 		})
 		if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 		const data = (await res.json()) as { data?: Array<{ id: string }> }
-		console.log(`${c.cyan}Loaded models:${c.reset}`)
+		const count = data.data?.length ?? 0
+		spin.succeed(`loaded ${count} model${count === 1 ? '' : 's'}`)
 		for (const m of data.data ?? []) {
 			console.log(`  ${c.green}${m.id}${c.reset}`)
 		}
 		return 0
 	} catch (err) {
-		console.error(`${c.red}✗${c.reset} ${(err as Error).message}`)
+		if (
+			(err as Error).name === 'TimeoutError' ||
+			(err as Error).name === 'AbortError'
+		) {
+			spin.fail('host not responding — start it with `omni host`')
+		} else {
+			spin.fail((err as Error).message)
+		}
 		return 1
 	}
 }
@@ -34,6 +45,9 @@ async function pullModel(ctx: CommandContext): Promise<number> {
 		)
 		return 1
 	}
+	// TODO: wire this to a /api/installs POST so the host's InstallRunner
+	// is the source of truth and we can poll the new /api/installs/:id
+	// endpoint (added in this change) for the live progress bar.
 	console.log(
 		`${c.yellow}⚠${c.reset} Model pull not yet implemented — edit qvac.config.json serve.models and restart host`,
 	)
@@ -48,6 +62,7 @@ async function runModel(ctx: CommandContext): Promise<number> {
 		return 1
 	}
 	const secret = (ctx.flags.secret as string) ?? process.env.OMNI_SECRET
+	const spin = spinner(`running ${alias}…`)
 	const res = await fetch('http://127.0.0.1:11434/v1/chat/completions', {
 		method: 'POST',
 		headers: {
@@ -61,9 +76,11 @@ async function runModel(ctx: CommandContext): Promise<number> {
 		}),
 	})
 	if (!res.ok) {
-		console.error(`${c.red}✗${c.reset} ${res.status} ${await res.text()}`)
+		spin.fail(`${res.status} ${await res.text()}`)
 		return 1
 	}
+	let tokenCount = 0
+	const startedAt = Date.now()
 	for await (const chunk of res.body ?? []) {
 		const text = new TextDecoder().decode(chunk)
 		for (const line of text.split('\n')) {
@@ -71,7 +88,14 @@ async function runModel(ctx: CommandContext): Promise<number> {
 				try {
 					const data = JSON.parse(line.slice(6))
 					const delta = data.choices?.[0]?.delta?.content
-					if (delta) process.stdout.write(delta)
+					if (delta) {
+						process.stdout.write(delta)
+						tokenCount++
+						if (tokenCount === 1) {
+							const firstTokenMs = Date.now() - startedAt
+							spin.succeed(`first token in ${firstTokenMs}ms — streaming…`)
+						}
+					}
 				} catch {}
 			}
 		}

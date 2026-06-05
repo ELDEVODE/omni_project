@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Elapsed, Spinner } from '../components/Progress.tsx'
 import { api } from '../lib/api.ts'
 
 export function TranscribePanel() {
@@ -6,6 +7,7 @@ export function TranscribePanel() {
 	const [running, setRunning] = useState(false)
 	const [error, setError] = useState('')
 	const [recording, setRecording] = useState(false)
+	const [startedAt, setStartedAt] = useState(0)
 	const audioRef = useRef<Blob[]>([])
 	const mrRef = useRef<MediaRecorder | null>(null)
 
@@ -26,6 +28,7 @@ export function TranscribePanel() {
 		mrRef.current.stop()
 		setRecording(false)
 		const blob = new Blob(audioRef.current, { type: 'audio/webm' })
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setTranscript('')
@@ -40,6 +43,7 @@ export function TranscribePanel() {
 	}
 
 	const onFile = async (file: File) => {
+		setStartedAt(Date.now())
 		setRunning(true)
 		setError('')
 		setTranscript('')
@@ -120,10 +124,15 @@ export function TranscribePanel() {
 			)}
 			{running && (
 				<div
-					className="hud-label"
-					style={{ marginTop: 8, fontSize: 10, color: 'var(--cyan)' }}
+					style={{
+						marginTop: 8,
+						display: 'flex',
+						alignItems: 'center',
+						gap: 10,
+					}}
 				>
-					PROCESSING…
+					<Spinner size={11} label="PROCESSING" />
+					{startedAt > 0 ? <Elapsed from={startedAt} /> : null}
 				</div>
 			)}
 		</div>
