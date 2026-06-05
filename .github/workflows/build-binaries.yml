@@ -74,7 +74,11 @@ jobs:
         run: |
           cd dist
           if [ "${{ matrix.ext }}" = "zip" ]; then
-            zip -r ${{ matrix.out }}.zip ${{ matrix.out }}
+            if command -v zip >/dev/null 2>&1; then
+              zip -r ${{ matrix.out }}.zip ${{ matrix.out }}
+            else
+              powershell -NoProfile -Command "Compress-Archive -Path '${{ matrix.out }}' -DestinationPath '${{ matrix.out }}.zip' -Force"
+            fi
           else
             tar -czf ${{ matrix.out }}.tar.gz ${{ matrix.out }}
           fi
