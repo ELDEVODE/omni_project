@@ -25,7 +25,7 @@ afterEach(() => {
 		tmpDir = null
 	}
 	if (originalHome !== undefined) process.env.HOME = originalHome
-	else process.env.HOME = undefined
+	else delete process.env.HOME
 })
 
 async function findCheck(name: string, checks: ReturnType<typeof buildChecks>) {
@@ -123,7 +123,7 @@ describe('omni doctor', () => {
 	}, 120000)
 
 	test('secret check does not throw when HOME is missing', async () => {
-		process.env.HOME = undefined
+		delete process.env.HOME
 		const row = await findCheck('secret', checks)
 		expect(row.status === 'ok' || row.status === 'warn').toBe(true)
 		expect(() => existsSync(tmpDir ?? '/nope')).not.toThrow()

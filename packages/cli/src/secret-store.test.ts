@@ -66,10 +66,11 @@ describe('secret-store', () => {
 	test('loadAuthToken reads from OMNI_SECRET env when set', () => {
 		process.env.OMNI_SECRET = 'env-token-xyz'
 		expect(store.loadAuthToken()).toBe('env-token-xyz')
-		process.env.OMNI_SECRET = undefined
+		delete process.env.OMNI_SECRET
 	})
 
 	test('loadAuthToken falls back to file when env is not set', () => {
+		delete process.env.OMNI_SECRET
 		store.writeSecret('file-token-456')
 		expect(store.loadAuthToken()).toBe('file-token-456')
 	})
