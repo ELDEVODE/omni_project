@@ -14,31 +14,33 @@ REPO="ELDEVODE/omni_project"
 BINARY="omni"
 
 # ─── ANSI helpers ─────────────────────────────────────────────
-# We use simple ANSI escapes for the spinner + progress bar. All output goes
-# to stderr so users can `| tee` the script and still capture clean stdout.
+# All output goes to stderr so users can `| tee` the script and still
+# capture clean stdout. ANSI-C quoting ($'...') is required so the
+# backslash escapes are interpreted by bash — single-quoted strings
+# preserve them as literal text.
 
-_C='\033[0m'      # reset
-_B='\033[1m'      # bold
-_D='\033[2m'      # dim
-_CY='\033[36m'    # cyan
-_GR='\033[32m'    # green
-_YE='\033[33m'    # yellow
-_RD='\033[31m'    # red
-_CR='\r'
-_CL='\033[2K'
-_HC='\033[?25l'   # hide cursor
-_SC='\033[?25h'   # show cursor
+_C=$'\033[0m'     # reset
+_B=$'\033[1m'     # bold
+_D=$'\033[2m'     # dim
+_CY=$'\033[36m'   # cyan
+_GR=$'\033[32m'   # green
+_YE=$'\033[33m'   # yellow
+_RD=$'\033[31m'   # red
+_CR=$'\r'         # carriage return
+_CL=$'\033[2K'    # clear entire line
+_HC=$'\033[?25l'  # hide cursor
+_SC=$'\033[?25h'  # show cursor
 
 is_tty() {
   [ -t 2 ] && [ -z "${NO_COLOR:-}" ]
 }
 
 # ─── Spinner ──────────────────────────────────────────────────
-# The spinner runs as a background subshell that prints a rotating glyph
-# and a label, redrawing the same line via \r + clear-line. We trap EXIT
-# to make sure we always restore the cursor.
+# A rotating glyph + label, redrawn on the same line via \r + clear-line.
+# Runs in a background subshell; EXIT trap restores the cursor. The
+# spinner is intentionally simple (4 frames, 120ms) so the terminal
+# doesn't get flooded with escape codes.
 _SPINNER_PID=""
-_SPINNER_FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
 
 spinner_start() {
   local text="$1"
@@ -47,16 +49,18 @@ spinner_start() {
     (
       i=0
       while :; do
-        glyph="${_SPINNER_FRAMES[$((i % 10))]}"
-        printf '%s%s %s%s%s %s' "$_CL" "$_CR" "$_B" "$_CY" "$glyph" "$_C" >&2
+        case $((i % 4)) in
+          0) g='⠋' ;; 1) g='⠙' ;; 2) g='⠸' ;; 3) g='⠴' ;;
+        esac
+        printf '%s%s%s %s%s %s' "$_CL" "$_CR" "$_B" "$_CY" "$g" "$_C" >&2
         printf '%s' "$text" >&2
         i=$((i + 1))
-        sleep 0.08
+        sleep 0.12
       done
     ) &
     _SPINNER_PID=$!
   else
-    printf '  %s%s•%s %s\n' "$_B" "$_CY" "$_C" "$text" >&2
+    printf '%s %s%s%s %s\n' "$_D" "$_B" "$_CY" "•" "$_C$text" >&2
   fi
 }
 
@@ -89,6 +93,8 @@ trap cleanup_spinner EXIT
 # ─── progress_bar_download ────────────────────────────────────
 # Wrapper around `curl` that uses curl's built-in progress bar (-#) on a
 # TTY. On non-TTY (CI, piped) we just silence curl's own status output.
+# The spinner must NOT be running when this is called — curl draws the
+# bar directly and we print a single "done" line afterwards.
 progress_bar_download() {
   local url="$1" out="$2"
   if is_tty; then
@@ -177,14 +183,23 @@ trap 'cleanup_spinner; eval "$TMP_CLEANUP"' EXIT
 echo "  ${_B}→${_C} installing omni v${LATEST} (${OS}-${ARCH})" >&2
 
 # ─── Download with progress bar ──────────────────────────────
-spinner_start "downloading omni v${LATEST}"
+# We don't run the spinner for the download — curl's own bar (-#) is the
+# progress indicator. Just announce the phase, then let curl run, then
+# print a single "done" line.
+if is_tty; then
+  printf '%s%s%s %s\n' "$_B" "$_CY" "⠋" "$_C  downloading omni v${LATEST}" >&2
+else
+  printf '  downloading omni v%s\n' "${LATEST}" >&2
+fi
 if ! progress_bar_download "$ARCHIVE_URL" "$TMP/omni.${EXT}"; then
-  spinner_fail
-  echo "Download failed: $ARCHIVE_URL" >&2
-  echo "Check that v${LATEST} has binaries published for ${OS}-${ARCH}." >&2
+  printf '%s✗%s download failed\n' "$_B$_RD" "$_C" >&2
+  echo "  url: $ARCHIVE_URL" >&2
+  echo "  Check that v${LATEST} has binaries published for ${OS}-${ARCH}." >&2
   exit 1
 fi
-spinner_ok
+if is_tty; then
+  printf '%s%s%s%s done\n' "$_B" "$_GR" "✓" "$_C" >&2
+fi
 
 # ─── Verify SHA-256 ─────────────────────────────────────────
 spinner_start "verifying SHA-256"
@@ -258,8 +273,7 @@ else
 fi
 
 echo ""
-echo "✓ omni v${LATEST} installed to $INSTALL_DIR/${EXE}"
-echo ""
+printf '%s✓%s omni v%s installed to %s\n\n' "$_B$_GR" "$_C" "${LATEST}" "$INSTALL_DIR/${EXE}"
 echo "Next steps:"
 echo "  1. Make sure $INSTALL_DIR is on your PATH"
 echo "  2. Run: omni doctor"

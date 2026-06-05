@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 # We use PowerShell's built-in Write-Progress for the download (it draws a
 # bar across the top of the terminal) and a custom rotating-glyph spinner
 # for the short, indeterminate steps (verify, extract, install).
-$script:SpinnerFrames = @('⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏')
+$script:SpinnerFrames = @('⠋', '⠙', '⠸', '⠴')
 $script:SpinnerJob = $null
 
 function Test-Tty {
@@ -35,7 +35,7 @@ function Test-Tty {
 function Start-Spinner {
     param([string]$Text)
     if (-not (Test-Tty)) {
-        Write-Host "  • $Text" -ForegroundColor Cyan
+        Write-Host "  • $Text" -ForegroundColor DarkCyan
         return
     }
     Write-Host "`e[?25l" -NoNewline
@@ -45,7 +45,7 @@ function Start-Spinner {
         while ($true) {
             $glyph = $Frames[$i % $Frames.Length]
             Write-Host "`e[2K`r  $glyph $Text" -NoNewline -ForegroundColor Cyan
-            Start-Sleep -Milliseconds 80
+            Start-Sleep -Milliseconds 120
             $i++
         }
     } -ArgumentList $Text, $script:SpinnerFrames
@@ -130,7 +130,8 @@ try {
     Write-Host "  → installing omni $TagVersion ($Os-$Arch)" -ForegroundColor White
 
     # ─── Download with Write-Progress bar ───────────────────
-    Start-Spinner 'downloading omni'
+    # Write-Progress draws a real bar at the top of the terminal, so we
+    # skip the spinner for this phase — it would only add noise.
     try {
         # Use Invoke-WebRequest with PassThru so we can read the total
         # size, then drive Write-Progress manually. We poll the file
@@ -162,10 +163,14 @@ try {
         $stream.Close()
         $response.Close()
         Write-Progress -Activity 'Downloading omni' -Completed
-        Stop-Spinner 'done'
+        if (Test-Tty) {
+            Write-Host "  ✓ downloaded" -ForegroundColor Green
+        }
     } catch {
-        Stop-Spinner 'fail'
         Write-Progress -Activity 'Downloading omni' -Completed
+        if (Test-Tty) {
+            Write-Host "  ✗ download failed" -ForegroundColor Red
+        }
         throw
     }
 
