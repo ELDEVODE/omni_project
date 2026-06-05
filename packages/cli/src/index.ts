@@ -18,14 +18,18 @@ const commands: Command[] = [
 
 const argv = process.argv.slice(2)
 
+const normalizedArgv = argv.length > 0 && (argv[0] === '--help' || argv[0] === '-h')
+	? ['help', ...argv.slice(1)]
+	: argv
+
 if (
-	argv.length === 0 ||
-	(argv[0] !== 'help' && argv[0] !== '--help' && argv[0] !== '-h')
+	normalizedArgv.length === 0 ||
+	normalizedArgv[0] === 'help'
 ) {
 	// eslint-disable-next-line no-console
 	console.log(BANNER)
 }
 
-runCli(commands, argv).then((code) => {
+runCli(commands, normalizedArgv).then((code) => {
 	if (code !== 0) process.exit(code)
 })
