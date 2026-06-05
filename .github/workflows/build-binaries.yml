@@ -20,7 +20,7 @@ jobs:
             target: darwin-arm64
             out: omni-darwin-arm64
             ext: tar.gz
-          - os: macos-13
+          - os: macos-14
             target: darwin-x64
             out: omni-darwin-x64
             ext: tar.gz
@@ -61,6 +61,7 @@ jobs:
         run: bun test
 
       - name: Build binary
+        shell: bash
         run: |
           mkdir -p dist/${{ matrix.out }}
           bun build packages/cli/src/index.ts \
@@ -83,9 +84,17 @@ jobs:
         run: |
           cd dist
           if [ "${{ matrix.ext }}" = "zip" ]; then
-            sha256sum ${{ matrix.out }}.zip
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum ${{ matrix.out }}.zip
+            else
+              shasum -a 256 ${{ matrix.out }}.zip
+            fi
           else
-            sha256sum ${{ matrix.out }}.tar.gz
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum ${{ matrix.out }}.tar.gz
+            else
+              shasum -a 256 ${{ matrix.out }}.tar.gz
+            fi
           fi
 
       - name: Upload artifact
@@ -111,7 +120,11 @@ jobs:
           : > checksums.txt
           for f in */**; do
             [ -f "$f" ] || continue
-            sha256sum "$f" >> checksums.txt
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$f" >> checksums.txt
+            else
+              shasum -a 256 "$f" >> checksums.txt
+            fi
           done
           cat checksums.txt
 
