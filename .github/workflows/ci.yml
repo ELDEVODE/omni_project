@@ -42,8 +42,8 @@ jobs:
         if: runner.os != 'Windows'
         run: bash -n docs/install.sh
 
-      - name: Smoke: omni --help
+      - name: 'Smoke: omni --help'
         run: bun run packages/cli/src/index.ts --help
 
-      - name: Smoke: omni doctor
+      - name: 'Smoke: omni doctor'
         run: bun run packages/cli/src/index.ts doctor
