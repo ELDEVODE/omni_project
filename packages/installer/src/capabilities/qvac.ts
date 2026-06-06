@@ -1,11 +1,16 @@
-// qvac — installs the @qvac/sdk npm package into the workspace's
-// host, worker, and (optionally) mobile packages. After install
-// the host/worker must restart to pick up the new SDK, which is
+// qvac — installs the @qvac/sdk npm package globally so the
+// compiled `omni` binary can dynamic-import it. The capability is
+// designed for end users running the standalone binary (no source
+// tree available); for source-tree dev checkouts the same code
+// still works because npm-install of an existing package is a
+// no-op fast path.
+//
+// After install, host/join must be restarted so the dynamic
+// `import('@qvac/sdk')` picks up the newly installed module —
 // signaled via `requiresRestart: true`.
 
-import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { runCommand } from '../spawn.ts'
+import { maybeSudo, runCommand } from '../spawn.ts'
 import type {
 	Capability,
 	CheckResult,
@@ -13,38 +18,70 @@ import type {
 	InstallEvent,
 } from '../types.ts'
 
-const TARGET_PACKAGES = [
-	{ name: '@omnimesh/host', dir: 'packages/host' },
-	{ name: '@omnimesh/worker', dir: 'packages/worker' },
-]
+const PACKAGE = '@qvac/sdk'
 
-function tryResolve(): { installed: boolean; version?: string; path?: string } {
+function globalNodeModulesRoot(ctx: InstallContext): string | null {
+	// `npm root -g` prints the global node_modules directory. Run it
+	// without elevation; npm itself owns the path. If it fails, we
+	// fall back to the well-known per-platform paths.
 	try {
-		// Use require.resolve so we get the real on-disk path of the
-		// hoisted package. Falls back gracefully if not installed.
-		const resolved = require.resolve('@qvac/sdk/package.json', {
-			paths: [process.cwd()],
+		// Synchronous best-effort: most platforms expose npm on PATH
+		// for the same user that's running omni. We use Bun.spawnSync
+		// here so the resolver can stay sync (it must — the verify
+		// step is called from a sync `check()` in some code paths).
+		const r = Bun.spawnSync({
+			cmd: ['npm', 'root', '-g'],
+			env: process.env,
 		})
-		const pkg = require('@qvac/sdk/package.json') as { version?: string }
-		return {
-			installed: true,
-			version: pkg.version,
-			path: resolved,
+		if (r.exitCode === 0) {
+			const out = new TextDecoder().decode(r.stdout).trim()
+			if (out) return out
 		}
+	} catch {
+		// npm not on PATH or Bun.spawnSync failed — fall through.
+	}
+	// Platform fallbacks. These are best-effort; if neither exists
+	// the resolver will report "not installed" and the user can
+	// re-run `omni install qvac` once they've installed Node.
+	if (ctx.platform === 'win32') {
+		const appData = process.env.APPDATA
+		if (appData) return path.join(appData, 'npm', 'node_modules')
+		return null
+	}
+	if (ctx.platform === 'darwin') {
+		return '/usr/local/lib/node_modules'
+	}
+	return '/usr/lib/node_modules'
+}
+
+function tryResolve(ctx: InstallContext): {
+	installed: boolean
+	version?: string
+	path?: string
+} {
+	const roots: string[] = []
+	const globalRoot = globalNodeModulesRoot(ctx)
+	if (globalRoot) roots.push(globalRoot)
+	roots.push(ctx.cwd) // dev-tree fallback
+	roots.push(process.cwd())
+	try {
+		const resolved = require.resolve(`${PACKAGE}/package.json`, {
+			paths: roots,
+		})
+		// Find the closest package.json in the resolution chain.
+		const pkg = require(`${PACKAGE}/package.json`) as { version?: string }
+		return { installed: true, version: pkg.version, path: resolved }
 	} catch {
 		return { installed: false }
 	}
 }
 
-async function check(_ctx: InstallContext): Promise<CheckResult> {
-	const r = tryResolve()
+async function check(ctx: InstallContext): Promise<CheckResult> {
+	const r = tryResolve(ctx)
 	if (r.installed) {
 		return { installed: true, version: r.version, path: r.path }
 	}
-	return {
-		installed: false,
-		hint: 'omni install qvac',
-	}
+	return { installed: false, hint: 'omni install qvac' }
 }
 
 async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
@@ -56,56 +93,58 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 		message: 'probing @qvac/sdk',
 	}
 	const before = await check(ctx)
+
+	// Pre-flight: ensure `npm` is on PATH. Without it we can't install
+	// or verify, and we want to fail fast with a clear message.
+	const npmProbe = await runCommand(
+		['npm', '--version'],
+		{ timeoutMs: 5_000 },
+		ctx,
+	)
+	if (npmProbe.exitCode !== 0) {
+		yield {
+			kind: 'fail',
+			capability: 'qvac',
+			code: 'npm_missing',
+			message: `npm is required to install ${PACKAGE} but was not found on PATH. Install Node.js (https://nodejs.org) and re-run \`omni install qvac\`.`,
+		}
+		return
+	}
+
 	yield {
 		kind: 'progress',
 		capability: 'qvac',
 		step: 'install',
 		percent: 15,
 		message: before.installed
-			? `updating @qvac/sdk (have ${before.version ?? 'unknown'})`
-			: 'installing @qvac/sdk',
+			? `updating ${PACKAGE} (have ${before.version ?? 'unknown'})`
+			: `installing ${PACKAGE} (npm install -g ${PACKAGE})`,
 	}
 
-	const total = TARGET_PACKAGES.length
-	let i = 0
-	for (const pkg of TARGET_PACKAGES) {
-		if (ctx.abortSignal?.aborted) {
-			yield { kind: 'cancel', capability: 'qvac' }
-			return
-		}
-		const target = path.join(ctx.cwd, pkg.dir)
-		if (!existsSync(target)) {
-			yield {
-				kind: 'log',
-				capability: 'qvac',
-				level: 'warn',
-				message: `skipping ${pkg.name} (${target} not found)`,
-			}
-			i++
-			continue
-		}
-		const r = await runCommand(
-			['npm', 'install', '@qvac/sdk'],
-			{ cwd: target, timeoutMs: 600_000 },
-			ctx,
-		)
-		if (r.exitCode !== 0) {
-			yield {
-				kind: 'fail',
-				capability: 'qvac',
-				code: 'npm_install_failed',
-				message: `npm install @qvac/sdk in ${pkg.name} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 200)}`,
-			}
-			return
-		}
-		i++
+	// Use `npm install -g @qvac/sdk` so the dynamic import in the
+	// compiled binary can find it via the global node_modules path.
+	// On Linux, elevate with sudo if we're not already root.
+	const cmd =
+		ctx.platform === 'linux'
+			? maybeSudo(['npm', 'install', '-g', PACKAGE], 'linux')
+			: ['npm', 'install', '-g', PACKAGE]
+
+	const r = await runCommand(cmd, { timeoutMs: 600_000 }, ctx)
+	if (r.exitCode !== 0) {
 		yield {
 			kind: 'progress',
 			capability: 'qvac',
 			step: 'install',
-			percent: 15 + Math.round((i / total) * 70),
-			message: `installed in ${pkg.name}`,
+			percent: 85,
+			message: `npm install failed (exit ${r.exitCode})`,
 		}
+		yield {
+			kind: 'fail',
+			capability: 'qvac',
+			code: 'npm_install_failed',
+			message: `npm install -g ${PACKAGE} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 240)}`,
+		}
+		return
 	}
 
 	yield {
@@ -113,7 +152,7 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 		capability: 'qvac',
 		step: 'verify',
 		percent: 92,
-		message: 'verifying @qvac/sdk resolvable',
+		message: `verifying ${PACKAGE} resolvable from global modules`,
 	}
 	const after = await check(ctx)
 	if (!after.installed) {
@@ -121,12 +160,12 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 			kind: 'fail',
 			capability: 'qvac',
 			code: 'verify_failed',
-			message: 'install succeeded but @qvac/sdk is still not resolvable',
+			message: `install succeeded but ${PACKAGE} is still not resolvable. Try running \`npm install -g ${PACKAGE}\` manually to see the underlying error.`,
 		}
 		return
 	}
 
-	// Touch the cache directory so doctor / CapsReport sees the bump.
+	// Touch the cache marker so doctor / CapsReport sees the bump.
 	const cache = path.join(ctx.cwd, '.qvac-installed')
 	if (!ctx.dryRun) {
 		try {

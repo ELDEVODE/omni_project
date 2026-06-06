@@ -103,15 +103,14 @@ async function runLocal(
 				ui.bar.tick(ui.percent, `${ev.step}: ${ev.message}`)
 			}
 		} else if (ev.kind === 'log') {
-			if (ui.bar) {
-				ui.bar.tick(ui.percent, `${ev.message}`)
-				ui.bar.stop()
-			}
+			// Logs don't move the bar — they're informational, not
+			// progress. Print on a new line below the live bar; the
+			// bar's next tick (or its done/fail handler) will clear
+			// this region when it writes the next line. Don't stop
+			// and restart the bar here — that caused the bar to
+			// flicker between 15% and 100% on installs that emit
+			// a couple of warnings and then fail.
 			console.log(`  ${c.dim}[${ev.level}]${c.reset} ${ev.message}`)
-			if (s.status === 'running') {
-				ui.bar = progressBar(100, { format: 'percent', showRate: false })
-				ui.bar.tick(ui.percent, '(resumed)')
-			}
 		} else if (ev.kind === 'done') {
 			if (ui.bar) {
 				ui.bar.tick(100, 'done')

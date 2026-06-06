@@ -1,6 +1,34 @@
 import { log } from './log.ts'
 import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 
+// Extend NODE_PATH with the global npm modules root so the dynamic
+// `import('@qvac/sdk')` in consumer.ts / provider.ts can find a
+// package installed via `npm install -g @qvac/sdk` after `omni
+// install qvac`. Same hook lives in host/src/index.ts — keep them
+// in sync.
+function primeNodePath(): void {
+	try {
+		const r = Bun.spawnSync({
+			cmd: ['npm', 'root', '-g'],
+			env: process.env,
+		})
+		if (r.exitCode !== 0) return
+		const root = new TextDecoder().decode(r.stdout).trim()
+		if (!root) return
+		const existing = process.env.NODE_PATH ?? ''
+		const sep = process.platform === 'win32' ? ';' : ':'
+		const parts = existing ? existing.split(sep) : []
+		if (!parts.includes(root)) {
+			process.env.NODE_PATH = parts.length
+				? `${parts.join(sep)}${sep}${root}`
+				: root
+		}
+	} catch {
+		// best-effort
+	}
+}
+primeNodePath()
+
 const providerPublicKey: string = process.env.OMNI_PROVIDER_PUBLIC_KEY ?? ''
 
 if (!providerPublicKey) {
