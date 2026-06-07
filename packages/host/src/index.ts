@@ -34,13 +34,20 @@ function commandExists(cmd: string): boolean {
 	return false
 }
 
-// primeNodePath — extends NODE_PATH with the global npm modules root
-// so the dynamic `import('@qvac/sdk')` in provider.ts / consumer.ts
-// can find a package installed via `npm install -g @qvac/sdk` after
-// `omni install qvac`. The provider is a `bun --compile` binary, so
-// the default resolution paths (cwd, package's own node_modules) are
-// not enough to reach the global modules root. We call this once at
-// boot, before any provider/consumer code does its dynamic import.
+// primeNodePath — extends NODE_PATH with the global npm modules
+// root so the dynamic `import('@qvac/sdk')` in provider.ts /
+// consumer.ts can find a package installed via
+// `npm install -g @qvac/sdk` after `omni install qvac`. The
+// provider is a `bun --compile` binary, so the default resolution
+// paths (cwd, package's own node_modules) are not enough to reach
+// the global modules root. We call this once at boot, before any
+// provider/consumer code does its dynamic import.
+//
+// NODE_PATH entries are treated as parent directories of a
+// `node_modules` folder by Node/Bun's resolver, so we add the
+// parent of the global root — not the root itself. The resolver
+// then walks `<entry>/node_modules/@qvac/sdk`, which is where
+// `npm install -g @qvac/sdk` drops the package.
 function primeNodePath(): void {
 	try {
 		const r = Bun.spawnSync({
@@ -50,13 +57,14 @@ function primeNodePath(): void {
 		if (r.exitCode !== 0) return
 		const root = new TextDecoder().decode(r.stdout).trim()
 		if (!root) return
+		const parent = path.dirname(root)
 		const existing = process.env.NODE_PATH ?? ''
 		const sep = process.platform === 'win32' ? ';' : ':'
 		const parts = existing ? existing.split(sep) : []
-		if (!parts.includes(root)) {
+		if (!parts.includes(parent)) {
 			process.env.NODE_PATH = parts.length
-				? `${parts.join(sep)}${sep}${root}`
-				: root
+				? `${parts.join(sep)}${sep}${parent}`
+				: parent
 		}
 	} catch {
 		// npm not on PATH or spawn failed; the dynamic import will

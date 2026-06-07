@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { log } from './log.ts'
 import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 
@@ -6,6 +7,10 @@ import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 // package installed via `npm install -g @qvac/sdk` after `omni
 // install qvac`. Same hook lives in host/src/index.ts — keep them
 // in sync.
+//
+// NODE_PATH entries are treated as parent directories of a
+// `node_modules` folder, so we add the parent of the global root —
+// not the root itself.
 function primeNodePath(): void {
 	try {
 		const r = Bun.spawnSync({
@@ -15,13 +20,14 @@ function primeNodePath(): void {
 		if (r.exitCode !== 0) return
 		const root = new TextDecoder().decode(r.stdout).trim()
 		if (!root) return
+		const parent = path.dirname(root)
 		const existing = process.env.NODE_PATH ?? ''
 		const sep = process.platform === 'win32' ? ';' : ':'
 		const parts = existing ? existing.split(sep) : []
-		if (!parts.includes(root)) {
+		if (!parts.includes(parent)) {
 			process.env.NODE_PATH = parts.length
-				? `${parts.join(sep)}${sep}${root}`
-				: root
+				? `${parts.join(sep)}${sep}${parent}`
+				: parent
 		}
 	} catch {
 		// best-effort

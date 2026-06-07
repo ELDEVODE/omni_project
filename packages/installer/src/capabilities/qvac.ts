@@ -9,6 +9,7 @@
 // `import('@qvac/sdk')` picks up the newly installed module —
 // signaled via `requiresRestart: true`.
 
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { maybeSudo, runCommand } from '../spawn.ts'
 import type {
@@ -59,21 +60,37 @@ function tryResolve(ctx: InstallContext): {
 	version?: string
 	path?: string
 } {
-	const roots: string[] = []
+	// Probe the candidate install locations directly instead of
+	// using `require.resolve(..., { paths })`. In a bun --compile
+	// binary the resolver's base is a virtual /$bunfs/root path and
+	// the `paths` option is silently ignored, so we just walk the
+	// well-known locations and read the package.json.
+	const candidates: string[] = []
 	const globalRoot = globalNodeModulesRoot(ctx)
-	if (globalRoot) roots.push(globalRoot)
-	roots.push(ctx.cwd) // dev-tree fallback
-	roots.push(process.cwd())
-	try {
-		const resolved = require.resolve(`${PACKAGE}/package.json`, {
-			paths: roots,
-		})
-		// Find the closest package.json in the resolution chain.
-		const pkg = require(`${PACKAGE}/package.json`) as { version?: string }
-		return { installed: true, version: pkg.version, path: resolved }
-	} catch {
-		return { installed: false }
+	if (globalRoot) {
+		// npm drops the package at <globalRoot>/<name>/package.json.
+		candidates.push(path.join(globalRoot, PACKAGE, 'package.json'))
 	}
+	// Dev-tree fallback: <cwd>/node_modules/@qvac/sdk/package.json.
+	candidates.push(path.join(ctx.cwd, 'node_modules', PACKAGE, 'package.json'))
+	candidates.push(
+		path.join(process.cwd(), 'node_modules', PACKAGE, 'package.json'),
+	)
+	for (const pkgJson of candidates) {
+		if (!existsSync(pkgJson)) continue
+		try {
+			const pkg = JSON.parse(readFileSync(pkgJson, 'utf8')) as {
+				name?: string
+				version?: string
+			}
+			if (pkg.name === PACKAGE) {
+				return { installed: true, version: pkg.version, path: pkgJson }
+			}
+		} catch {
+			// unreadable — try the next candidate
+		}
+	}
+	return { installed: false }
 }
 
 async function check(ctx: InstallContext): Promise<CheckResult> {
