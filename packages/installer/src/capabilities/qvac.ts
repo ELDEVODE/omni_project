@@ -30,9 +30,14 @@ function globalNodeModulesRoot(ctx: InstallContext): string | null {
 		// for the same user that's running omni. We use Bun.spawnSync
 		// here so the resolver can stay sync (it must — the verify
 		// step is called from a sync `check()` in some code paths).
+		// The timeout is critical: in bun --compile binaries,
+		// Bun.spawnSync without a timeout can hang indefinitely
+		// when the host shell is a non-interactive PTY in some
+		// configurations. 3s is plenty for a `npm root -g` call.
 		const r = Bun.spawnSync({
 			cmd: ['npm', 'root', '-g'],
 			env: process.env,
+			timeout: 3_000,
 		})
 		if (r.exitCode === 0) {
 			const out = new TextDecoder().decode(r.stdout).trim()

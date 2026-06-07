@@ -16,6 +16,7 @@ function primeNodePath(): void {
 		const r = Bun.spawnSync({
 			cmd: ['npm', 'root', '-g'],
 			env: process.env,
+			timeout: 3_000,
 		})
 		if (r.exitCode !== 0) return
 		const root = new TextDecoder().decode(r.stdout).trim()
