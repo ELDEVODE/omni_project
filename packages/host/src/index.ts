@@ -404,16 +404,4 @@ export async function startHost(
 	})
 }
 
-const isMain =
-	import.meta.url === `file://${process.argv[1]}` ||
-	process.argv[1]?.endsWith('index.ts') ||
-	process.argv[1]?.endsWith('index.js')
-
-if (isMain) {
-	startHost().catch((err) => {
-		log.error('Host failed to start', { error: (err as Error).message })
-		process.exit(1)
-	})
-}
-
 void loadQVACConfig

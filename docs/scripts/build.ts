@@ -86,8 +86,9 @@ function mdToHtml(md: string): string {
 
 		if (line.startsWith('```')) {
 			if (inCode) {
+				const lang = codeLang || 'text'
 				out.push(
-					`<pre class="code"><code class="lang-${escapeAttr(codeLang)}">${highlight(codeLang, codeBuf.join('\n'))}</code></pre>`,
+					`<pre class="code" data-lang="${escapeAttr(lang)}"><code class="lang-${escapeAttr(lang)}">${highlight(codeLang, codeBuf.join('\n'))}</code></pre>`,
 				)
 				codeBuf = []
 				codeLang = ''
@@ -159,8 +160,9 @@ function mdToHtml(md: string): string {
 	closePara()
 	closeList()
 	if (inCode) {
+		const lang = codeLang || 'text'
 		out.push(
-			`<pre class="code"><code class="lang-${escapeAttr(codeLang)}">${highlight(codeLang, codeBuf.join('\n'))}</code></pre>`,
+			`<pre class="code" data-lang="${escapeAttr(lang)}"><code class="lang-${escapeAttr(lang)}">${highlight(codeLang, codeBuf.join('\n'))}</code></pre>`,
 		)
 	}
 	return out.join('\n')
@@ -228,6 +230,17 @@ function renderPage(body: string, fm: FrontMatter, all: PAGES, current: string):
 		.join('\n')
 
 	const desc = fm.description ? `<meta name="description" content="${escapeAttr(fm.description)}">` : ''
+	const isHome = current === 'index.html'
+	const hero = isHome
+		? `<div class="hero">
+<h1>${shellEscape(fm.title)}</h1>
+<p>${fm.description ? shellEscape(fm.description) : 'Decentralized, air-gappable AI mesh.'}</p>
+<a class="cta" href="quickstart.html">Get Started →</a>
+</div>`
+		: ''
+	const bodyContent = isHome
+		? hero + body.replace(/<h1[^>]*>.*?<\/h1>/, '')
+		: body
 	return `<!doctype html>
 <html lang="en">
 <head>
@@ -251,16 +264,16 @@ ${desc}
 </header>
 <aside class="sidebar">
   <ul class="nav">${nav}</ul>
-  <div class="install">
-    <h4>Install</h4>
+  <div class="install-box">
+    <span class="label">⚡ quick install</span>
     <pre class="code"><code class="lang-bash">curl -fsSL https://eldevode.github.io/omni_project/install.sh | bash</code></pre>
   </div>
 </aside>
 <main class="content">
-  <article>${body}</article>
+  <article>${bodyContent}</article>
   <footer>
     <hr>
-    <p>OmniMesh · MIT License · <a class="ext" href="https://github.com/omnimesh/omni/blob/main/SECURITY.md">security@elpraise20@gmail.com</a></p>
+    <p>OmniMesh · MIT License · <a class="ext" href="https://github.com/ELDEVODE/omni_project">GitHub</a> · <a href="mailto:elpraise20@gmail.com">contact</a></p>
   </footer>
 </main>
 </body>

@@ -28,7 +28,7 @@
     "typecheck": "tsc -b",
     "docs:gen": "bun run docs/scripts/gen-capabilities.ts",
     "docs:build": "bun run docs:gen && bun run docs/scripts/build.ts",
-    "docs:serve": "bun --hot serve docs/dist",
+    "docs:serve": "python3 -m http.server 3006 --directory docs/dist",
     "clean": "rm -rf packages/*/dist packages/*/node_modules/.cache docs/dist"
   },
   "type": "module",

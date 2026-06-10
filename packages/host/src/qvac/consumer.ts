@@ -5,6 +5,7 @@
 
 import { log } from '../log.ts'
 import { loadQVACConfig } from './config.ts'
+import { loadQVACSDK } from './loadSDK.ts'
 import type { QVACDelegate, QVACSDK } from './types.ts'
 
 export interface LoadModelArgs {
@@ -150,11 +151,7 @@ export function makeConsumer(sdk: QVACSDK | null): QVACConsumer {
 
 export async function tryLoadQVAC(): Promise<QVACSDK | null> {
 	try {
-		const mod = (await import(/* @vite-ignore */ '@qvac/sdk' as string)) as
-			| QVACSDK
-			| undefined
-		if (!mod) return null
-		return mod
+		return await loadQVACSDK()
 	} catch (err) {
 		log.warn(
 			`@qvac/sdk not installed (${(err as Error).message}). Consumer disabled.`,

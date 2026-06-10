@@ -11,6 +11,7 @@
 
 import { log } from '../log.ts'
 import { loadQVACConfig } from './config.ts'
+import { loadQVACSDK } from './loadSDK.ts'
 import type { QVACSDK } from './types.ts'
 
 export interface StartProviderOptions {
@@ -35,11 +36,9 @@ export class QVACProvider {
 
 	async start(opts: StartProviderOptions = {}): Promise<void> {
 		try {
-			const mod = (await import(/* @vite-ignore */ '@qvac/sdk' as string)) as
-				| QVACSDK
-				| undefined
+			const mod = await loadQVACSDK()
 			if (!mod) {
-				log.warn('@qvac/sdk not present. QVAC provider disabled.')
+				log.warn('@qvac/sdk not installed. QVAC provider disabled.')
 				return
 			}
 			this.sdk = mod
