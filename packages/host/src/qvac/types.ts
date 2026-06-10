@@ -75,6 +75,11 @@ export interface QVACRegistryEntry {
 	description?: string
 }
 
+export interface QVACHeartbeatOptions {
+	delegate: QVACDelegate
+	timeout?: number
+}
+
 export interface QVACDownloadProgress {
 	bytes: number
 	total: number

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { log } from '../log.ts'
+import { tryNodeBridge } from './nodeBridge.ts'
 import type { QVACSDK } from './types.ts'
 
 let cachedSDK: QVACSDK | null | undefined = undefined
@@ -25,6 +26,15 @@ async function tryLoadFrom(modPath: string): Promise<QVACSDK | null> {
 		return (mod.default ?? mod) as QVACSDK
 	} catch {
 		return null
+	}
+}
+
+function nodeOnPath(): boolean {
+	try {
+		const r = Bun.spawnSync({ cmd: ['node', '--version'], timeout: 3_000 })
+		return r.exitCode === 0
+	} catch {
+		return false
 	}
 }
 
@@ -61,8 +71,19 @@ export async function loadQVACSDK(): Promise<QVACSDK | null> {
 		}
 	}
 
+	// 4. Fallback: spawn Node child process bridge (works in compiled binary)
+	if (nodeOnPath()) {
+		log.info('Direct SDK import failed; trying Node child-process bridge…')
+		const bridgeSDK = await tryNodeBridge()
+		if (bridgeSDK) {
+			log.info('QVAC SDK loaded via Node bridge')
+			cachedSDK = bridgeSDK
+			return bridgeSDK
+		}
+	}
+
 	log.warn(
-		'@qvac/sdk not loadable in compiled binary. Run from project source or use `omni install qvac` + a Node-based host wrapper for P2P mesh features. Dashboard, API, and OpenAI server work without it.',
+		'@qvac/sdk not loadable. Install Node.js and run `omni install qvac`, then restart. Dashboard, API, and OpenAI server work without it.',
 	)
 	cachedSDK = null
 	return null

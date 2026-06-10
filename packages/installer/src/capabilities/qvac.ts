@@ -34,9 +34,10 @@ function globalNodeModulesRoot(ctx: InstallContext): string | null {
 		// Bun.spawnSync without a timeout can hang indefinitely
 		// when the host shell is a non-interactive PTY in some
 		// configurations. 3s is plenty for a `npm root -g` call.
-		const npmProbeCmd = ctx.platform === 'win32'
-			? ['cmd.exe', '/c', 'npm', 'root', '-g']
-			: ['npm', 'root', '-g']
+		const npmProbeCmd =
+			ctx.platform === 'win32'
+				? ['cmd.exe', '/c', 'npm', 'root', '-g']
+				: ['npm', 'root', '-g']
 		const r = Bun.spawnSync({
 			cmd: npmProbeCmd,
 			env: process.env,
