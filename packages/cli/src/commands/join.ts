@@ -4,57 +4,57 @@ import type { Command } from '../router.ts'
 import { c } from '../ui/banner.ts'
 
 export const joinCommand: Command = {
-  name: 'join',
-  description:
-    'Join an existing OmniMesh mesh as a QVAC consumer delegating to a provider.',
-  usage:
-    'join <providerPublicKey|omni://…> [--name=jeffs-mac] [--always-on-voice] [--secret=abc123]',
-  run: ({ args, flags }) => {
-    const raw = args[0]
-    if (!raw) {
-      console.error(
-        `${c.red}✗${c.reset} provider public key required: omni join <pubkey|omni://…>`,
-      )
-      return 1
-    }
-    const name = (flags.name as string) ?? undefined
-    const alwaysOnVoice = 'always-on-voice' in flags
-    const flagSecret = (flags.secret as string) ?? process.env.OMNI_SECRET
-    let providerPublicKey: string
-    let secret: string | undefined = flagSecret
+	name: 'join',
+	description:
+		'Join an existing OmniMesh mesh as a QVAC consumer delegating to a provider.',
+	usage:
+		'join <providerPublicKey|omni://…> [--name=jeffs-mac] [--always-on-voice] [--secret=abc123]',
+	run: ({ args, flags }) => {
+		const raw = args[0]
+		if (!raw) {
+			console.error(
+				`${c.red}✗${c.reset} provider public key required: omni join <pubkey|omni://…>`,
+			)
+			return 1
+		}
+		const name = (flags.name as string) ?? undefined
+		const alwaysOnVoice = 'always-on-voice' in flags
+		const flagSecret = (flags.secret as string) ?? process.env.OMNI_SECRET
+		let providerPublicKey: string
+		let secret: string | undefined = flagSecret
 
-    if (raw.startsWith('omni://')) {
-      const pairing = decodePairing(raw)
-      if (!pairing) {
-        console.error(`${c.red}✗${c.reset} invalid omni:// URI: ${raw}`)
-        return 1
-      }
-      providerPublicKey = pairing.providerPublicKey
-      secret = pairing.token
-      console.log(
-        `${c.cyan}→${c.reset} Parsed pairing: ${c.bold}${pairing.meshName ?? 'mesh'}${c.reset} @ ${providerPublicKey.slice(0, 16)}…`,
-      )
-    } else {
-      providerPublicKey = raw
-      if (flagSecret) {
-        console.log(
-          `${c.cyan}→${c.reset} Joining mesh via provider ${providerPublicKey.slice(0, 16)}… with shared secret...`,
-        )
-      } else {
-        console.log(
-          `${c.yellow}⚠${c.reset} No secret provided. Pass --secret=<token> or use omni:// URI. (Mesh may reject the connection.)`,
-        )
-        console.log(
-          `${c.cyan}→${c.reset} Joining mesh via provider ${providerPublicKey.slice(0, 16)}… as "${name ?? 'unnamed'}"...`,
-        )
-      }
-    }
+		if (raw.startsWith('omni://')) {
+			const pairing = decodePairing(raw)
+			if (!pairing) {
+				console.error(`${c.red}✗${c.reset} invalid omni:// URI: ${raw}`)
+				return 1
+			}
+			providerPublicKey = pairing.providerPublicKey
+			secret = pairing.token
+			console.log(
+				`${c.cyan}→${c.reset} Parsed pairing: ${c.bold}${pairing.meshName ?? 'mesh'}${c.reset} @ ${providerPublicKey.slice(0, 16)}…`,
+			)
+		} else {
+			providerPublicKey = raw
+			if (flagSecret) {
+				console.log(
+					`${c.cyan}→${c.reset} Joining mesh via provider ${providerPublicKey.slice(0, 16)}… with shared secret...`,
+				)
+			} else {
+				console.log(
+					`${c.yellow}⚠${c.reset} No secret provided. Pass --secret=<token> or use omni:// URI. (Mesh may reject the connection.)`,
+				)
+				console.log(
+					`${c.cyan}→${c.reset} Joining mesh via provider ${providerPublicKey.slice(0, 16)}… as "${name ?? 'unnamed'}"...`,
+				)
+			}
+		}
 
-    return startConsumer({ providerPublicKey, name, alwaysOnVoice, secret })
-      .then(() => 0)
-      .catch((err: Error) => {
-        console.error(`${c.red}✗${c.reset} Join failed: ${err.message}`)
-        return 1
-      })
-  },
+		return startConsumer({ providerPublicKey, name, alwaysOnVoice, secret })
+			.then(() => 0)
+			.catch((err: Error) => {
+				console.error(`${c.red}✗${c.reset} Join failed: ${err.message}`)
+				return 1
+			})
+	},
 }
