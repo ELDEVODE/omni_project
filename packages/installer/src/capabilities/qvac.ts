@@ -34,8 +34,11 @@ function globalNodeModulesRoot(ctx: InstallContext): string | null {
 		// Bun.spawnSync without a timeout can hang indefinitely
 		// when the host shell is a non-interactive PTY in some
 		// configurations. 3s is plenty for a `npm root -g` call.
+		const npmProbeCmd = ctx.platform === 'win32'
+			? ['cmd.exe', '/c', 'npm', 'root', '-g']
+			: ['npm', 'root', '-g']
 		const r = Bun.spawnSync({
-			cmd: ['npm', 'root', '-g'],
+			cmd: npmProbeCmd,
 			env: process.env,
 			timeout: 3_000,
 		})
@@ -106,6 +109,14 @@ async function check(ctx: InstallContext): Promise<CheckResult> {
 	return { installed: false, hint: 'omni install qvac' }
 }
 
+function npmCmd(ctx: InstallContext, ...args: string[]): string[] {
+	// On Windows, npm is npm.cmd — a batch file that cannot be spawned
+	// directly by Bun.spawn (or CreateProcess) without cmd.exe.
+	return ctx.platform === 'win32'
+		? ['cmd.exe', '/c', 'npm', ...args]
+		: ['npm', ...args]
+}
+
 async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 	yield {
 		kind: 'progress',
@@ -119,7 +130,7 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 	// Pre-flight: ensure `npm` is on PATH. Without it we can't install
 	// or verify, and we want to fail fast with a clear message.
 	const npmProbe = await runCommand(
-		['npm', '--version'],
+		npmCmd(ctx, '--version'),
 		{ timeoutMs: 5_000 },
 		ctx,
 	)
@@ -148,8 +159,8 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 	// On Linux, elevate with sudo if we're not already root.
 	const cmd =
 		ctx.platform === 'linux'
-			? maybeSudo(['npm', 'install', '-g', PACKAGE], 'linux')
-			: ['npm', 'install', '-g', PACKAGE]
+			? maybeSudo(npmCmd(ctx, 'install', '-g', PACKAGE), 'linux')
+			: npmCmd(ctx, 'install', '-g', PACKAGE)
 
 	const r = await runCommand(cmd, { timeoutMs: 600_000 }, ctx)
 	if (r.exitCode !== 0) {
