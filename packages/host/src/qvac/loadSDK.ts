@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { log } from '../log.ts'
 import { tryNodeBridge } from './nodeBridge.ts'
@@ -17,6 +17,17 @@ function getGlobalRoot(): string | null {
 		return new TextDecoder().decode(r.stdout).trim() || null
 	} catch {
 		return null
+	}
+}
+
+function getEntryPath(packageDir: string): string {
+	try {
+		const pkgJsonPath = path.join(packageDir, 'package.json')
+		const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as { main?: string }
+		const main = pkg.main || './dist/index.js'
+		return path.resolve(packageDir, main)
+	} catch {
+		return path.join(packageDir, 'dist/index.js')
 	}
 }
 
@@ -41,8 +52,10 @@ function nodeOnPath(): boolean {
 export async function loadQVACSDK(): Promise<QVACSDK | null> {
 	if (cachedSDK !== undefined) return cachedSDK
 
+	let sdkImportPath = '@qvac/sdk'
+
 	// 1. Try standard resolution (works in dev, fails in compiled binary)
-	let sdk = await tryLoadFrom('@qvac/sdk')
+	let sdk = await tryLoadFrom(sdkImportPath)
 	if (sdk) {
 		cachedSDK = sdk
 		return sdk
@@ -53,28 +66,32 @@ export async function loadQVACSDK(): Promise<QVACSDK | null> {
 	if (globalRoot) {
 		const globalPath = path.join(globalRoot, '@qvac', 'sdk')
 		if (existsSync(path.join(globalPath, 'package.json'))) {
-			sdk = await tryLoadFrom(globalPath)
+			const entry = getEntryPath(globalPath)
+			sdk = await tryLoadFrom(entry)
 			if (sdk) {
 				cachedSDK = sdk
 				return sdk
 			}
+			sdkImportPath = entry
 		}
 	}
 
 	// 3. Try local node_modules relative to cwd
 	const localPath = path.join(process.cwd(), 'node_modules', '@qvac', 'sdk')
 	if (existsSync(path.join(localPath, 'package.json'))) {
-		sdk = await tryLoadFrom(localPath)
+		const entry = getEntryPath(localPath)
+		sdk = await tryLoadFrom(entry)
 		if (sdk) {
 			cachedSDK = sdk
 			return sdk
 		}
+		sdkImportPath = entry
 	}
 
 	// 4. Fallback: spawn Node child process bridge (works in compiled binary)
 	if (nodeOnPath()) {
 		log.info('Direct SDK import failed; trying Node child-process bridge…')
-		const bridgeSDK = await tryNodeBridge()
+		const bridgeSDK = await tryNodeBridge(sdkImportPath)
 		if (bridgeSDK) {
 			log.info('QVAC SDK loaded via Node bridge')
 			cachedSDK = bridgeSDK
