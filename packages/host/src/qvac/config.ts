@@ -43,12 +43,24 @@ function findConfigFile(): string | null {
 	return null
 }
 
+function expandPath(filepath: string): string {
+	if (filepath.startsWith('~')) {
+		return path.join(os.homedir(), filepath.slice(1))
+	}
+	// Expand environment variables like %USERPROFILE% or $HOME
+	return filepath
+		.replace(/%([^%]+)%/g, (_, n) => process.env[n] || `%${n}%`)
+		.replace(/\$([A-Z_]+)/g, (_, n) => process.env[n] || `$${n}`)
+}
+
 export function loadQVACConfig(): QVACConfig {
 	const file = findConfigFile()
 	if (!file) return DEFAULTS
 	try {
 		const raw = JSON.parse(fs.readFileSync(file, 'utf8'))
-		return { ...DEFAULTS, ...raw }
+		const merged = { ...DEFAULTS, ...raw }
+		merged.cacheDirectory = expandPath(merged.cacheDirectory)
+		return merged
 	} catch {
 		return DEFAULTS
 	}
