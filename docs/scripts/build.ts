@@ -219,28 +219,60 @@ function shellEscape(s: string): string {
 	return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c)
 }
 
-function renderPage(body: string, fm: FrontMatter, all: PAGES, current: string): string {
-	const nav = all
-		.slice()
-		.sort((a, b) => (a.fm.order ?? 999) - (b.fm.order ?? 999))
-		.map((p) => {
+function buildGroupedNav(all: PAGES, current: string): string {
+	const sorted = all.slice().sort((a, b) => (a.fm.order ?? 999) - (b.fm.order ?? 999))
+	const groups = new Map<string, typeof sorted>()
+	for (const p of sorted) {
+		const g = p.fm.group || 'Docs'
+		if (!groups.has(g)) groups.set(g, [])
+		groups.get(g)!.push(p)
+	}
+	const parts: string[] = []
+	for (const [group, pages] of groups) {
+		parts.push(`<div class="nav-group">`)
+		parts.push(`<span class="nav-group-label">${shellEscape(group)}</span>`)
+		parts.push(`<ul class="nav">`)
+		for (const p of pages) {
 			const active = p.out === current ? ' class="active"' : ''
-			return `<li><a${active} href="${p.out}">${shellEscape(p.fm.title)}</a></li>`
-		})
-		.join('\n')
+			parts.push(`<li><a${active} href="${p.out}">${shellEscape(p.fm.title)}</a></li>`)
+		}
+		parts.push(`</ul></div>`)
+	}
+	return parts.join('\n')
+}
+
+function buildToc(body: string): string {
+	const re = /<h2 id="([^"]+)">(.*?)<\/h2>/g
+	const items: string[] = []
+	let m: RegExpExecArray | null
+	while ((m = re.exec(body)) !== null) {
+		const id = m[1]
+		const text = (m[2] ?? '').replace(/<[^>]+>/g, '')
+		items.push(`<li><a href="#${id}">${text}</a></li>`)
+	}
+	if (items.length < 2) return ''
+	return `<nav class="page-toc">
+<div class="page-toc-title">On this page</div>
+<ul>${items.join('\n')}</ul>
+</nav>`
+}
+
+function renderPage(body: string, fm: FrontMatter, all: PAGES, current: string): string {
+	const nav = buildGroupedNav(all, current)
 
 	const desc = fm.description ? `<meta name="description" content="${escapeAttr(fm.description)}">` : ''
 	const isHome = current === 'index.html'
 	const hero = isHome
 		? `<div class="hero">
-<h1>${shellEscape(fm.title)}</h1>
+<h1>${shellEscape(fm.title)}<span class="version-badge">v0.1.0</span></h1>
 <p>${fm.description ? shellEscape(fm.description) : 'Decentralized, air-gappable AI mesh.'}</p>
 <a class="cta" href="quickstart.html">Get Started →</a>
 </div>`
 		: ''
+	const toc = !isHome ? buildToc(body) : ''
 	const bodyContent = isHome
 		? hero + body.replace(/<h1[^>]*>.*?<\/h1>/, '')
-		: body
+		: toc + body
 	return `<!doctype html>
 <html lang="en">
 <head>
@@ -254,35 +286,44 @@ ${desc}
 </head>
 <body>
 <header class="topbar">
+  <button class="mobile-toggle" aria-label="Toggle navigation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <div class="brand">
-    <span class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></span>
+    <span class="logo"><svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" fill="#ff3366" rx="3" stroke="#000" stroke-width="2"/>
+      <polygon points="16,5 27,16 16,27 5,16" fill="#000"/>
+      <polygon points="16,9 23,16 16,23 9,16" fill="#fff"/>
+      <rect x="13" y="14" width="6" height="4" fill="#ff3366" rx="1"/>
+    </svg></span>
     <span class="name">OmniMesh</span>
     <span class="tag">decentralized · air-gapped · sovereign</span>
   </div>
   <nav class="topnav">
-    <a href="https://github.com/ELDEVODE/omni_project" class="ext">GitHub →</a>
+    <a href="https://github.com/ELDEVODE/omni_project">GitHub</a>
   </nav>
 </header>
+<div class="sidebar-overlay"></div>
 <aside class="sidebar">
-  <ul class="nav">${nav}</ul>
+  ${nav}
   <div class="install-box">
     <div class="install-header">
       <span class="label">⚡ quick install</span>
       <div class="os-tabs">
-        <button class="os-tab" data-target="tab-unix">mac/Linux</button>
+        <button class="os-tab" data-target="tab-unix">macOS / Linux</button>
         <button class="os-tab" data-target="tab-win">Windows</button>
       </div>
     </div>
     <div id="tab-unix" class="install-content">
       <pre class="code"><code id="code-unix" class="lang-bash">curl -fsSL https://omnimesh.github.io/omni/install.sh | bash</code></pre>
       <button class="copy-btn" data-target="code-unix" aria-label="Copy command">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
       </button>
     </div>
     <div id="tab-win" class="install-content">
       <pre class="code"><code id="code-win" class="lang-powershell">iwr -useb https://omnimesh.github.io/omni/install.ps1 | iex</code></pre>
       <button class="copy-btn" data-target="code-win" aria-label="Copy command">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
       </button>
     </div>
   </div>
@@ -333,7 +374,7 @@ function main() {
 }
 
 function copyAssets() {
-	const targets = ['styles.css', 'favicon.svg']
+	const targets = ['styles.css', 'favicon.svg', 'script.js']
 	for (const t of targets) {
 		const src = join(assetsDir, t)
 		if (!existsSync(src)) {
