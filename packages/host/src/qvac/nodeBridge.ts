@@ -101,6 +101,8 @@ class NodeBridgeSDK implements QVACSDK {
 		{ resolve: (v: unknown) => void; reject: (e: Error) => void }
 	>()
 	private buf = ''
+	private stderrBuf = ''
+	private started = false
 
 	async start(): Promise<boolean> {
 		if (this.proc) return true
@@ -110,7 +112,7 @@ class NodeBridgeSDK implements QVACSDK {
 				cmd: ['node', script],
 				stdin: 'pipe',
 				stdout: 'pipe',
-				stderr: 'inherit',
+				stderr: 'pipe',
 				env: process.env,
 			})
 			const stdout = this.proc
@@ -124,9 +126,32 @@ class NodeBridgeSDK implements QVACSDK {
 				}
 			).getReader()
 			this.readLoop(reader)
+
+			const stderr = this.proc
+				.stderr as unknown as ReadableStream<Uint8Array> | null
+			if (stderr) {
+				const stderrReader = (
+					stderr as unknown as {
+						getReader: () => ReadableStreamDefaultReader<Uint8Array>
+					}
+				).getReader()
+				this.readStderrLoop(stderrReader)
+			}
+
 			const pong = await this.request('ping', null)
-			return pong === 'pong'
+			if (pong === 'pong') {
+				this.started = true
+				if (this.stderrBuf) {
+					process.stderr.write(this.stderrBuf)
+					this.stderrBuf = ''
+				}
+				return true
+			}
+			return false
 		} catch (err) {
+			if (this.stderrBuf && !this.stderrBuf.includes('ERR_MODULE_NOT_FOUND')) {
+				log.warn(`SDK bridge stderr:\n${this.stderrBuf.trim()}`)
+			}
 			log.warn(`SDK bridge start failed: ${(err as Error).message}`)
 			this.cleanup()
 			return false
@@ -159,6 +184,26 @@ class NodeBridgeSDK implements QVACSDK {
 			// stream ended
 		}
 		this.cleanup()
+	}
+
+	private async readStderrLoop(reader: {
+		read: () => Promise<{ done: boolean; value?: Uint8Array }>
+	}) {
+		try {
+			while (true) {
+				const { done, value } = await reader.read()
+				if (done) break
+				if (!value) continue
+				const text = new TextDecoder().decode(value)
+				if (this.started) {
+					process.stderr.write(text)
+				} else {
+					this.stderrBuf += text
+				}
+			}
+		} catch {
+			// stream ended
+		}
 	}
 
 	private request(method: string, params: unknown): Promise<unknown> {
@@ -200,6 +245,8 @@ class NodeBridgeSDK implements QVACSDK {
 		}
 		for (const [, p] of this.pending) p.reject(new Error('bridge disconnected'))
 		this.pending.clear()
+		this.stderrBuf = ''
+		this.started = false
 	}
 
 	async stop() {

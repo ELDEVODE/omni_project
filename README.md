@@ -91,7 +91,9 @@ The host stays WebSocket-only and is now a thin bridge: WS for control/auth/mDNS
 
 Modern AI is centralized, high-latency, and dependent on the global internet. You don't own your intelligence; you rent it. OmniMesh is the opposite: decentralized, air-gapped, sovereign.
 
-> **"I am not a user of AI; I am the operator of my own private AI node."**
+> **"Data never leaves your local network. No external API keys required."**
+> 
+> *"I am not a user of AI; I am the operator of my own private AI node."*
 
 ## Development
 

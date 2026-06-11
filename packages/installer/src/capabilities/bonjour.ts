@@ -56,13 +56,13 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 		return
 	}
 
-	const target = path.join(ctx.cwd, 'packages', 'host')
-	if (!existsSync(target)) {
+	const target = ctx.cwd
+	if (!existsSync(path.join(target, 'package.json'))) {
 		yield {
 			kind: 'fail',
 			capability: 'bonjour',
 			code: 'target_missing',
-			message: `packages/host not found at ${target}`,
+			message: `No package.json found in ${target}. Run this inside an OmniMesh package.`,
 		}
 		return
 	}

@@ -327,6 +327,15 @@ blockquote {
   border: 3px solid #333;
   padding: 0.8em;
   margin-top: 1em;
+  position: relative;
+}
+.install-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.5em;
+  flex-wrap: wrap;
+  gap: 0.5em;
 }
 .sidebar .install-box .label {
   display: inline-block;
@@ -337,21 +346,76 @@ blockquote {
   text-transform: uppercase;
   padding: 0.15em 0.5em;
   border: 2px solid var(--border);
-  margin-bottom: 0.5em;
+  margin-bottom: 0;
+}
+.os-tabs {
+  display: flex;
+  gap: 0.3em;
+}
+.os-tab {
+  background: #333;
+  color: #aaa;
+  border: 2px solid #222;
+  font-size: 0.65em;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 0.2em 0.5em;
+  cursor: pointer;
+  font-family: var(--mono);
+}
+.os-tab:hover {
+  color: #fff;
+}
+.os-tab.active {
+  background: var(--yellow);
+  color: var(--fg);
+  border-color: var(--border);
+}
+.install-content {
+  display: none;
+  position: relative;
+}
+.install-content.active {
+  display: block;
 }
 .sidebar .install-box pre.code {
   font-size: 11px;
   padding: 0.6em;
+  padding-right: 2.5em;
   background: #111;
   border-color: #444;
   box-shadow: none;
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 .sidebar .install-box pre.code code {
   color: #0f0;
 }
 .sidebar .install-box pre.code::before {
   display: none;
+}
+.copy-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.4em;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.2em;
+  display: flex;
+  align-items: center;
+}
+.copy-btn:hover {
+  color: #fff;
+}
+.copy-btn.copied {
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 0.8em;
+  font-weight: bold;
 }
 
 .content {

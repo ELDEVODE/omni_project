@@ -65,10 +65,17 @@ export async function runCommand(
 			// already exited
 		}
 	}, timeout)
+
+	// Start reading streams immediately to drain OS pipe buffers and avoid deadlocks
+	const stdoutPromise = readStream(proc.stdout)
+	const stderrPromise = readStream(proc.stderr)
+
 	const exit = await proc.exited.catch(() => 1)
 	clearTimeout(timer)
-	const stdout = await readStream(proc.stdout)
-	const stderr = await readStream(proc.stderr)
+
+	const stdout = await stdoutPromise
+	const stderr = await stderrPromise
+
 	return {
 		exitCode: exit,
 		stdout,
