@@ -23,10 +23,9 @@ export function encodePairing(p: PairingPayload): string {
 		if (p.providerPublicKey) params.set('provider', p.providerPublicKey)
 		const query = params.toString()
 		return `omni://${p.host}${query ? `?${query}` : ''}`
-	} else {
-		const query = params.toString()
-		return `omni://${p.providerPublicKey}${query ? `?${query}` : ''}`
 	}
+	const query = params.toString()
+	return `omni://${p.providerPublicKey}${query ? `?${query}` : ''}`
 }
 
 export function decodePairing(uri: string): PairingPayload | null {
@@ -46,7 +45,9 @@ export function decodePairing(uri: string): PairingPayload | null {
 			const port = Number(portStr)
 			if (!Number.isFinite(port) || port < 1 || port > 65535) return null
 			const providerKey =
-				url.searchParams.get('provider') ?? url.searchParams.get('p2p') ?? undefined
+				url.searchParams.get('provider') ??
+				url.searchParams.get('p2p') ??
+				undefined
 			return {
 				host: hostname,
 				port,
@@ -54,12 +55,11 @@ export function decodePairing(uri: string): PairingPayload | null {
 				providerPublicKey: providerKey ?? '',
 				...(meshName ? { meshName } : {}),
 			}
-		} else {
-			return {
-				providerPublicKey: hostname,
-				token,
-				...(meshName ? { meshName } : {}),
-			}
+		}
+		return {
+			providerPublicKey: hostname,
+			token,
+			...(meshName ? { meshName } : {}),
 		}
 	} catch {
 		return null

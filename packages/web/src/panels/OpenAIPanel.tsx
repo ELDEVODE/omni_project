@@ -18,7 +18,10 @@ export function OpenAIPanel() {
 	const [firstTokenMs, setFirstTokenMs] = useState<number | null>(null)
 	const [prompt, setPrompt] = useState('Say hello to the OmniMesh mesh.')
 
-	const origin = typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3005'
+	const origin =
+		typeof window !== 'undefined'
+			? window.location.origin
+			: 'http://127.0.0.1:3005'
 	const baseUrl = SERVER_URL || origin
 
 	const refresh = async () => {
@@ -35,6 +38,7 @@ export function OpenAIPanel() {
 		}
 	}
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
 	useEffect(() => {
 		void refresh()
 	}, [])

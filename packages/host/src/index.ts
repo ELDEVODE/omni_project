@@ -358,7 +358,9 @@ export async function startHost(
 						headers: proxyRes.headers,
 					})
 				} catch (err) {
-					log.error(`Proxy to OpenAI endpoint failed: ${(err as Error).message}`)
+					log.error(
+						`Proxy to OpenAI endpoint failed: ${(err as Error).message}`,
+					)
 					return new Response(
 						JSON.stringify({
 							error: 'OpenAI endpoint unreachable',
