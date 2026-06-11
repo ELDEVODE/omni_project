@@ -9,11 +9,11 @@ export const joinCommand: Command = {
 		'Join an existing OmniMesh mesh as a QVAC consumer delegating to a provider.',
 	usage:
 		'join <providerPublicKey|omni://…> [--name=jeffs-mac] [--always-on-voice] [--secret=abc123]',
-	run: ({ args, flags }) => {
+	run: async ({ args, flags }) => {
 		const raw = args[0]
 		if (!raw) {
 			console.error(
-				`${c.red}✗${c.reset} provider public key required: omni join <pubkey|omni://…>`,
+				`${c.red}✗${c.reset} provider public key or host required: omni join <pubkey|host|omni://…>`,
 			)
 			return 1
 		}
@@ -35,7 +35,32 @@ export const joinCommand: Command = {
 				`${c.cyan}→${c.reset} Parsed pairing: ${c.bold}${pairing.meshName ?? 'mesh'}${c.reset} @ ${providerPublicKey.slice(0, 16)}…`,
 			)
 		} else {
-			providerPublicKey = raw
+			if (raw.length !== 64 || !/^[0-9a-fA-F]+$/.test(raw)) {
+				try {
+					const url = `http://${raw}:3005/api/health`
+					console.log(
+						`${c.cyan}→${c.reset} Discovering public key from ${url}...`,
+					)
+					const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+					if (!res.ok) throw new Error(`HTTP ${res.status}`)
+					const data = (await res.json()) as {
+						qvac?: { publicKey?: string }
+					}
+					if (!data.qvac?.publicKey) throw new Error('No public key returned')
+					providerPublicKey = data.qvac.publicKey
+					console.log(
+						`${c.green}✓${c.reset} Discovered public key: ${providerPublicKey.slice(0, 16)}…`,
+					)
+				} catch (err) {
+					console.error(
+						`${c.red}✗${c.reset} Failed to fetch public key from ${raw}: ${(err as Error).message}`,
+					)
+					return 1
+				}
+			} else {
+				providerPublicKey = raw
+			}
+
 			if (flagSecret) {
 				console.log(
 					`${c.cyan}→${c.reset} Joining mesh via provider ${providerPublicKey.slice(0, 16)}… with shared secret...`,

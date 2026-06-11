@@ -11,11 +11,7 @@
 	],
 	"loggerConsoleOutput": true,
 	"loggerLevel": "info",
-	"swarmRelays": [
-		"wss://relay-01.qvac.ai",
-		"wss://relay-02.qvac.ai",
-		"wss://relay-03.qvac.ai"
-	],
+
 	"httpDownloadConcurrency": 3,
 	"httpConnectionTimeoutMs": 10000,
 	"registryDownloadMaxRetries": 3,

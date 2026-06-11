@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { InstallRunner, defaultRegistry } from '@omnimesh/installer'
 import type { RunState } from '@omnimesh/installer'
 import { type HostConfig, loadConfig } from './config.ts'
+import { ensureWindowsFirewall } from './firewall.ts'
 import { log } from './log.ts'
 import { loadQVACConfig } from './qvac/config.ts'
 import { QVACProvider } from './qvac/provider.ts'
@@ -197,6 +198,8 @@ export async function startHost(
 		port: cfg.port,
 		meshName: cfg.meshName,
 	})
+
+	ensureWindowsFirewall()
 
 	const seed = crypto.randomBytes(32).toString('hex')
 
