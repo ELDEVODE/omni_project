@@ -204,31 +204,31 @@ function staticChecks(): DoctorCheck[] {
 			},
 		},
 		{
-			key: 'qvac-sdk',
+			key: 'qvac-cli',
 			run: async () => {
 				const hasQvacBin = await checkCommandAvailable('qvac', 2000)
 				if (hasQvacBin) {
 					return {
-						key: 'qvac sdk',
+						key: 'qvac cli',
 						value: 'qvac binary available',
 						status: 'ok',
 					}
 				}
 				return {
-					key: 'qvac sdk',
-					value: 'not installed (run: omni install qvac)',
+					key: 'qvac cli',
+					value: 'not installed (run: npm install -g @qvac/cli)',
 					status: 'warn',
 				}
 			},
 		},
 		{
-			key: 'qvac-doctor',
+			key: 'qvac-cli-doctor',
 			run: async () => {
 				const hasQvacBin = await checkCommandAvailable('qvac', 2000)
 				if (!hasQvacBin) {
 					return {
-						key: 'qvac doctor',
-						value: 'not run (run: omni install qvac)',
+						key: 'qvac cli doctor',
+						value: 'not run (install @qvac/cli)',
 						status: 'warn',
 					}
 				}
@@ -248,19 +248,19 @@ function staticChecks(): DoctorCheck[] {
 								(s) => s.checks?.filter((c) => c.status === 'warn') ?? [],
 							).length ?? 0
 						return {
-							key: 'qvac doctor',
+							key: 'qvac cli doctor',
 							value: `${report.ok ? 'pass' : 'fail'} (${failed} fail, ${warned} warn)`,
 							status: report.ok ? 'ok' : 'warn',
 							detail: JSON.stringify(report),
 						}
 					}
 					return {
-						key: 'qvac doctor',
+						key: 'qvac cli doctor',
 						value: 'not run (install @qvac/cli)',
 						status: 'warn',
 					}
 				} catch {
-					return { key: 'qvac doctor', value: 'check failed', status: 'warn' }
+					return { key: 'qvac cli doctor', value: 'check failed', status: 'warn' }
 				}
 			},
 		},
