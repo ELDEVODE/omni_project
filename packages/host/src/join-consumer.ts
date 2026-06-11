@@ -49,19 +49,18 @@ export async function startConsumer(config: ConsumerConfig): Promise<void> {
 		`dialling provider ${providerPublicKey.slice(0, 16)}…`,
 	)
 	try {
-		await consumer.loadModel({
-			modelId: 'default',
-			delegate: {
-				providerPublicKey,
-				timeout: 60_000,
-				fallbackToLocal: true,
-			},
+		const hb = await consumer.heartbeat({
+			providerPublicKey,
+			timeoutMs: 60_000,
 		})
-		bootProgress('connect', 'delegated model ready')
-		log.info('Delegated model loaded successfully')
+		if (!hb.reachable) {
+			throw new Error('Provider unreachable')
+		}
+		bootProgress('connect', `connected (ping ${hb.rttMs}ms)`)
+		log.info(`Connected to provider (rtt: ${hb.rttMs}ms)`)
 	} catch (err) {
 		bootProgress('connect', `failed: ${(err as Error).message}`)
-		log.warn(`Failed to load delegated model: ${(err as Error).message}`)
+		log.warn(`Failed to connect to provider: ${(err as Error).message}`)
 	}
 
 	bootProgress('ready', 'consumer online')
