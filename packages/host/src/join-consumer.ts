@@ -1,6 +1,7 @@
 import { log } from './log.ts'
 import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 import { primeNodePath } from './util.ts'
+import { ensureWindowsFirewall } from './firewall.ts'
 
 export type ConsumerConfig = {
 	providerPublicKey: string
@@ -16,6 +17,7 @@ function bootProgress(phase: string, message: string): void {
 }
 
 export async function startConsumer(config: ConsumerConfig): Promise<void> {
+	ensureWindowsFirewall()
 	const { providerPublicKey, name, alwaysOnVoice, secret } = config
 
 	if (secret) {
