@@ -123,27 +123,30 @@ pre.code {
   background: #fafafa;
   border: 3px solid var(--border);
   box-shadow: var(--shadow);
-  padding: 1.2em 1.4em;
+  padding: 1.6em 1.4em 1.2em;
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.6;
-  margin: 1.5em 0;
+  margin: 1.8em 0 1.5em;
   position: relative;
 }
 pre.code::before {
   content: attr(data-lang);
   position: absolute;
-  top: -11px;
+  top: 0;
   right: 12px;
   background: var(--pink);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 10px;
-  border: 2px solid var(--border);
+  border: 0 solid var(--border);
+  border-bottom-width: 2px;
+  border-left-width: 2px;
   text-transform: uppercase;
   font-family: var(--mono);
   letter-spacing: 0.05em;
+  line-height: 1.4;
 }
 pre.code code {
   background: transparent;
@@ -405,45 +408,48 @@ blockquote {
 .sidebar .install-box {
   background: #141414;
   border: 2px solid #333;
-  padding: 1em;
-  margin: 1em 1em 0;
+  padding: 0.8em;
+  margin: 1.5em 0.8em 0;
   border-radius: var(--radius);
 }
 .install-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 0.6em;
-  gap: 0.4em;
 }
 .sidebar .install-box .label {
-  display: inline-block;
+  display: block;
   background: var(--green);
   color: var(--fg);
   font-size: 0.6em;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 0.2em 0.6em;
+  padding: 0.25em 0.6em;
   border: 2px solid var(--border);
   letter-spacing: 0.04em;
   font-family: var(--mono);
+  text-align: center;
+  margin-bottom: 0.5em;
 }
 .os-tabs {
   display: flex;
-  gap: 2px;
+  gap: 0;
 }
 .os-tab {
+  flex: 1;
   background: #222;
   color: #777;
   border: 2px solid #333;
-  font-size: 0.6em;
+  font-size: 0.65em;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 0.25em 0.6em;
+  padding: 0.4em 0.4em;
   cursor: pointer;
   font-family: var(--mono);
   transition: all 0.15s;
   letter-spacing: 0.03em;
+  text-align: center;
+}
+.os-tab + .os-tab {
+  border-left: none;
 }
 .os-tab:hover {
   color: #ccc;
@@ -463,13 +469,13 @@ blockquote {
 }
 .sidebar .install-box pre.code {
   font-size: 11px;
-  padding: 0.7em 2.4em 0.7em 0.7em;
+  padding: 0.7em;
   background: #0a0a0a;
   border: 2px solid #333;
   box-shadow: none;
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
+  overflow-x: auto;
+  white-space: nowrap;
   line-height: 1.5;
 }
 .sidebar .install-box pre.code code {
@@ -480,31 +486,33 @@ blockquote {
   display: none;
 }
 
-/* ─── Copy Button ───────────────────────────────── */
-
-.copy-btn {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
-  background: #222;
-  border: 2px solid #444;
-  color: #888;
-  cursor: pointer;
-  padding: 4px;
+/* Copy button sits below the command */
+.install-content .copy-btn {
+  position: static;
+  transform: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+  background: #222;
+  border: 2px solid #333;
+  color: #888;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.6em;
+  font-family: var(--mono);
+  font-weight: 700;
+  text-transform: uppercase;
   transition: all 0.15s;
 }
-.copy-btn:hover {
+.install-content .copy-btn:hover {
   color: #fff;
   background: #333;
-  border-color: #666;
+  border-color: #555;
 }
-.copy-btn.copied {
+.install-content .copy-btn.copied {
   color: var(--green);
   border-color: var(--green);
   background: rgba(0, 204, 68, 0.1);
@@ -624,6 +632,98 @@ blockquote {
   margin-left: 0.5em;
 }
 
+/* ─── Sidebar collapse (desktop) ────────────────── */
+
+.sidebar-collapse {
+  display: none;
+}
+
+body.sidebar-collapsed {
+  grid-template-columns: 0px 1fr;
+}
+body.sidebar-collapsed .sidebar {
+  display: none;
+}
+
+/* ─── Search ────────────────────────────────────── */
+
+.search-wrapper {
+  padding: 0.8em 0.8em 0;
+}
+.search-input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  color: #ccc;
+  padding: 0.5em 0.7em 0.5em 2.2em;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  outline: none;
+  transition: border-color 0.15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 8px center;
+  background-size: 14px;
+}
+.search-input::placeholder {
+  color: #555;
+}
+.search-input:focus {
+  border-color: var(--yellow);
+  color: #fff;
+}
+.search-results {
+  list-style: none;
+  padding: 0;
+  margin: 0.3em 0 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.search-results:empty {
+  display: none;
+}
+.search-results li {
+  margin: 0;
+}
+.search-results a {
+  display: block;
+  padding: 0.5em 0.7em;
+  color: #ccc;
+  text-decoration: none;
+  font-size: 0.8em;
+  border-left: 3px solid transparent;
+  transition: all 0.1s;
+  font-family: var(--sans);
+}
+.search-results a:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+  border-left-color: var(--pink);
+}
+.search-results .search-title {
+  font-weight: 700;
+  color: #fff;
+}
+.search-results .search-snippet {
+  display: block;
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.search-results mark {
+  background: var(--yellow);
+  color: var(--fg);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.search-no-results {
+  color: #666;
+  font-size: 0.75em;
+  padding: 0.5em 0.7em;
+  font-style: italic;
+}
+
 /* ─── Mobile hamburger ──────────────────────────── */
 
 .mobile-toggle {
@@ -639,6 +739,35 @@ blockquote {
   height: 24px;
 }
 
+/* ─── Desktop sidebar toggle in topbar ──────────── */
+.sidebar-toggle {
+  background: none;
+  border: 2px solid #ddd;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: var(--fg-dim);
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+  margin-right: 0.4em;
+}
+.sidebar-toggle:hover {
+  border-color: var(--border);
+  color: var(--fg);
+}
+.sidebar-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* kbd shortcut hint */
+.kbd-hint {
+  font-size: 0.65em;
+  color: var(--fg-muted);
+  font-family: var(--mono);
+  margin-left: 4px;
+}
+
 /* ─── Responsive ────────────────────────────────── */
 
 @media (max-width: 860px) {
@@ -648,6 +777,10 @@ blockquote {
       "topbar"
       "content";
   }
+  body.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-toggle { display: none; }
   .sidebar {
     position: fixed;
     top: var(--topbar-h);
@@ -673,8 +806,15 @@ blockquote {
     margin: -1.5em -1.2em 2em -1.2em;
     padding: 1.5em;
   }
-  .hero h1 { font-size: 2em; }
+  .hero h1 { font-size: 1.8em; }
   .brand .tag { display: none; }
+  pre.code {
+    font-size: 12px;
+  }
+  .page-toc {
+    display: block;
+    width: 100%;
+  }
 
   .sidebar-overlay {
     display: none;
@@ -687,4 +827,14 @@ blockquote {
   .sidebar-overlay.active {
     display: block;
   }
+}
+
+@media (max-width: 480px) {
+  .content { padding: 1em 0.8em; }
+  h1 { font-size: 1.6em; }
+  h2 { font-size: 1.2em; }
+  .hero h1 { font-size: 1.5em; }
+  .hero { padding: 1em; }
+  pre.code { font-size: 11px; padding: 1em 0.8em; }
+  .topnav a { font-size: 0.7em; padding: 0.3em 0.6em; }
 }

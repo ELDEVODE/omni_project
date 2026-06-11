@@ -289,6 +289,9 @@ ${desc}
   <button class="mobile-toggle" aria-label="Toggle navigation">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
+  <button class="sidebar-toggle" aria-label="Toggle sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+  </button>
   <div class="brand">
     <span class="logo"><svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
       <rect width="32" height="32" fill="#ff3366" rx="3" stroke="#000" stroke-width="2"/>
@@ -305,6 +308,10 @@ ${desc}
 </header>
 <div class="sidebar-overlay"></div>
 <aside class="sidebar">
+  <div class="search-wrapper">
+    <input type="text" class="search-input" placeholder="Search docs...  /" aria-label="Search documentation">
+    <ul class="search-results"></ul>
+  </div>
   ${nav}
   <div class="install-box">
     <div class="install-header">
@@ -317,13 +324,13 @@ ${desc}
     <div id="tab-unix" class="install-content">
       <pre class="code"><code id="code-unix" class="lang-bash">curl -fsSL https://omnimesh.github.io/omni/install.sh | bash</code></pre>
       <button class="copy-btn" data-target="code-unix" aria-label="Copy command">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
       </button>
     </div>
     <div id="tab-win" class="install-content">
       <pre class="code"><code id="code-win" class="lang-powershell">iwr -useb https://omnimesh.github.io/omni/install.ps1 | iex</code></pre>
       <button class="copy-btn" data-target="code-win" aria-label="Copy command">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
       </button>
     </div>
   </div>
@@ -373,6 +380,21 @@ function main() {
 	console.log(`✓ docs site built → ${relative(root, distDir)} (${PAGES.length} pages)`)
 }
 
+function stripMarkdown(md: string): string {
+	return md
+		.replace(/```[\s\S]*?```/g, '')
+		.replace(/^#{1,6}\s+/gm, '')
+		.replace(/\*\*([^*]+)\*\*/g, '$1')
+		.replace(/__([^_]+)__/g, '$1')
+		.replace(/\*([^*]+)\*/g, '$1')
+		.replace(/_([^_]+)_/g, '$1')
+		.replace(/`([^`]+)`/g, '$1')
+		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+		.replace(/<[^>]+>/g, '')
+		.replace(/\s+/g, ' ')
+		.trim()
+}
+
 function copyAssets() {
 	const targets = ['styles.css', 'favicon.svg', 'script.js']
 	for (const t of targets) {
@@ -398,6 +420,22 @@ function copyAssets() {
 		writeFileSync(join(distDir, out), data)
 		console.log(`  ${out}`)
 	}
+
+	// Generate search index
+	const searchIndex: { title: string; url: string; body: string; group: string }[] = []
+	for (const p of PAGES) {
+		const raw = readFileSync(p.src, 'utf8')
+		const { fm, body } = parseFrontMatter(raw)
+		const plainBody = stripMarkdown(body).slice(0, 2000)
+		searchIndex.push({
+			title: fm.title,
+			url: p.out,
+			body: plainBody,
+			group: fm.group || 'Docs',
+		})
+	}
+	writeFileSync(join(distDir, 'assets', 'search-index.json'), JSON.stringify(searchIndex))
+	console.log('  search-index.json')
 }
 
 if (process.argv[1] && process.argv[1].endsWith('build.ts')) {
