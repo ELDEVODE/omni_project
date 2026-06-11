@@ -309,8 +309,11 @@ ${desc}
 <div class="sidebar-overlay"></div>
 <aside class="sidebar">
   <div class="search-wrapper">
-    <input type="text" class="search-input" placeholder="Search docs...  /" aria-label="Search documentation">
-    <ul class="search-results"></ul>
+    <button class="search-trigger" aria-label="Search documentation" type="button">
+      <svg class="search-trigger-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span class="search-trigger-placeholder">Search docs...</span>
+      <kbd class="search-trigger-kbd">/</kbd>
+    </button>
   </div>
   ${nav}
   <div class="install-box">
@@ -342,6 +345,28 @@ ${desc}
     <p>OmniMesh · MIT License · <a class="ext" href="https://github.com/ELDEVODE/omni_project">GitHub</a> · <a href="mailto:elpraise20@gmail.com">contact</a></p>
   </footer>
 </main>
+<!-- Search Modal -->
+<div class="search-modal-backdrop" id="searchModal" aria-hidden="true" role="dialog">
+  <div class="search-modal">
+    <header class="search-modal-header">
+      <svg class="search-modal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" class="search-modal-input" id="searchModalInput" placeholder="Search documentation..." aria-label="Search documentation" autocomplete="off" spellcheck="false">
+      <button class="search-modal-close" aria-label="Close search" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </header>
+    <div class="search-modal-body">
+      <ul class="search-modal-results"></ul>
+    </div>
+    <footer class="search-modal-footer">
+      <div class="search-modal-hints">
+        <span class="hint-item"><kbd>↑↓</kbd> to navigate</span>
+        <span class="hint-item"><kbd>↵</kbd> to select</span>
+        <span class="hint-item"><kbd>ESC</kbd> to close</span>
+      </div>
+    </footer>
+  </div>
+</div>
 </body>
 </html>
 `

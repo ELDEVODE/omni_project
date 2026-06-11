@@ -96,12 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		})
 	}
 
-	/* ─── 6. Search ───────────────────────────────── */
-	const searchInput = document.querySelector('.search-input')
-	const searchResults = document.querySelector('.search-results')
+	/* ─── 6. Search Modal Controller ──────────────── */
+	const searchTrigger = document.querySelector('.search-trigger')
+	const searchModal = document.getElementById('searchModal')
+	const searchInput = document.getElementById('searchModalInput')
+	const searchResults = document.querySelector('.search-modal-results')
+	const closeBtn = document.querySelector('.search-modal-close')
 	let searchIndex = null
+	let activeIndex = -1
+	let resultItems = []
 
-	// Load search index lazily on first focus
+	// Load search index lazily
 	async function loadSearchIndex() {
 		if (searchIndex) return
 		try {
@@ -117,6 +122,49 @@ document.addEventListener('DOMContentLoaded', () => {
 			console.warn('Search index not available', e)
 			searchIndex = []
 		}
+	}
+
+	function openModal() {
+		loadSearchIndex().then(() => {
+			document.body.classList.add('search-modal-open')
+			searchModal.setAttribute('aria-hidden', 'false')
+			setTimeout(() => {
+				if (searchInput) searchInput.focus()
+			}, 50)
+		})
+	}
+
+	function closeModal() {
+		document.body.classList.remove('search-modal-open')
+		searchModal.setAttribute('aria-hidden', 'true')
+		if (searchInput) {
+			searchInput.value = ''
+			searchInput.blur()
+		}
+		if (searchResults) {
+			searchResults.innerHTML = ''
+		}
+		activeIndex = -1
+		resultItems = []
+	}
+
+	// Trigger button click
+	if (searchTrigger) {
+		searchTrigger.addEventListener('click', openModal)
+	}
+
+	// Close button click
+	if (closeBtn) {
+		closeBtn.addEventListener('click', closeModal)
+	}
+
+	// Backdrop click close
+	if (searchModal) {
+		searchModal.addEventListener('click', (e) => {
+			if (e.target === searchModal) {
+				closeModal()
+			}
+		})
 	}
 
 	/**
@@ -215,11 +263,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!searchResults) return
 			if (!q || q.trim().length < 2) {
 				searchResults.innerHTML = ''
+				activeIndex = -1
+				resultItems = []
 				return
 			}
 			const hits = searchDocs(q)
 			if (hits.length === 0) {
-				searchResults.innerHTML = `<li class="search-no-results">No results for "${q}"</li>`
+				searchResults.innerHTML = `<div class="search-modal-empty">No results for "${q}"</div>`
+				activeIndex = -1
+				resultItems = []
 				return
 			}
 			searchResults.innerHTML = hits.map(h => {
@@ -229,26 +281,66 @@ document.addEventListener('DOMContentLoaded', () => {
 					<span class="search-snippet">${highlightText(snippet, q)}</span>
 				</a></li>`
 			}).join('')
-		}, 150) // debounce 150ms
+			
+			resultItems = Array.from(searchResults.querySelectorAll('li'))
+			activeIndex = 0
+			updateActiveResult()
+		}, 120) // debounce 120ms
+	}
+
+	function updateActiveResult() {
+		if (!resultItems.length) return
+		resultItems.forEach((li, idx) => {
+			li.classList.toggle('active', idx === activeIndex)
+		})
+		const activeItem = resultItems[activeIndex]
+		if (activeItem) {
+			activeItem.scrollIntoView({ block: 'nearest' })
+		}
 	}
 
 	if (searchInput) {
-		searchInput.addEventListener('focus', loadSearchIndex)
 		searchInput.addEventListener('input', onSearchInput)
-
-		// Keyboard shortcut: / to focus search
-		document.addEventListener('keydown', (e) => {
-			if (e.key === '/' && document.activeElement !== searchInput && !e.ctrlKey && !e.metaKey) {
-				const tag = document.activeElement?.tagName
-				if (tag === 'INPUT' || tag === 'TEXTAREA') return
-				e.preventDefault()
-				searchInput.focus()
-			}
-			if (e.key === 'Escape' && document.activeElement === searchInput) {
-				searchInput.value = ''
-				searchResults.innerHTML = ''
-				searchInput.blur()
-			}
-		})
 	}
+
+	// Keyboard event listener for shortcuts & navigation
+	document.addEventListener('keydown', (e) => {
+		const isModalOpen = document.body.classList.contains('search-modal-open')
+
+		// / shortcut to open modal
+		if (e.key === '/' && !isModalOpen) {
+			const tag = document.activeElement?.tagName
+			if (tag === 'INPUT' || tag === 'TEXTAREA') return
+			e.preventDefault()
+			openModal()
+		}
+
+		if (isModalOpen) {
+			if (e.key === 'Escape') {
+				e.preventDefault()
+				closeModal()
+			} else if (e.key === 'ArrowDown') {
+				e.preventDefault()
+				if (resultItems.length) {
+					activeIndex = (activeIndex + 1) % resultItems.length
+					updateActiveResult()
+				}
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault()
+				if (resultItems.length) {
+					activeIndex = (activeIndex - 1 + resultItems.length) % resultItems.length
+					updateActiveResult()
+				}
+			} else if (e.key === 'Enter') {
+				if (resultItems.length && activeIndex >= 0) {
+					const activeLink = resultItems[activeIndex].querySelector('a')
+					if (activeLink) {
+						e.preventDefault()
+						activeLink.click()
+						closeModal()
+					}
+				}
+			}
+		}
+	})
 })
