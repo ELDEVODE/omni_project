@@ -18,9 +18,7 @@ import type {
 function tryResolve(): { installed: boolean; version?: string; path?: string } {
 	try {
 		const fs = require('node:fs') as typeof import('node:fs')
-		const { createRequire } = require('node:module') as typeof import(
-			'node:module',
-		)
+		const { createRequire } = require('node:module') as typeof import('node:module')
 		const req = createRequire(`${process.cwd()}/`)
 		const resolved = req.resolve('bonjour-service/package.json')
 		const pkg = JSON.parse(fs.readFileSync(resolved, 'utf8')) as {
