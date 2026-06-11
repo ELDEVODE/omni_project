@@ -260,7 +260,11 @@ function staticChecks(): DoctorCheck[] {
 						status: 'warn',
 					}
 				} catch {
-					return { key: 'qvac cli doctor', value: 'check failed', status: 'warn' }
+					return {
+						key: 'qvac cli doctor',
+						value: 'check failed',
+						status: 'warn',
+					}
 				}
 			},
 		},
