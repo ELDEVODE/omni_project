@@ -1,7 +1,7 @@
+import { ensureWindowsFirewall } from './firewall.ts'
 import { log } from './log.ts'
 import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
 import { primeNodePath } from './util.ts'
-import { ensureWindowsFirewall } from './firewall.ts'
 
 export type ConsumerConfig = {
 	providerPublicKey: string
