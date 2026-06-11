@@ -10,6 +10,7 @@ import { log } from './log.ts'
 import { loadQVACConfig } from './qvac/config.ts'
 import { QVACProvider } from './qvac/provider.ts'
 import { ModelRegistry } from './qvac/registry.ts'
+import { primeNodePath } from './util.ts'
 
 // One host-level install runner. The CLI's `omni models pull` will POST
 // to /api/installs (TODO) and the dashboard can poll /api/installs/:id
@@ -37,42 +38,6 @@ function commandExists(cmd: string): boolean {
 // primeNodePath — extends NODE_PATH with the global npm modules
 // root so the dynamic `import('@qvac/sdk')` in provider.ts /
 // consumer.ts can find a package installed via
-// `npm install -g @qvac/sdk` after `omni install qvac`. The
-// provider is a `bun --compile` binary, so the default resolution
-// paths (cwd, package's own node_modules) are not enough to reach
-// the global modules root. We call this once at boot, before any
-// provider/consumer code does its dynamic import.
-//
-// NODE_PATH entries are treated as parent directories of a
-// `node_modules` folder by Node/Bun's resolver, so we add the
-// parent of the global root — not the root itself. The resolver
-// then walks `<entry>/node_modules/@qvac/sdk`, which is where
-// `npm install -g @qvac/sdk` drops the package.
-function primeNodePath(): void {
-	try {
-		const r = Bun.spawnSync({
-			cmd: ['npm', 'root', '-g'],
-			env: process.env,
-			timeout: 3_000,
-		})
-		if (r.exitCode !== 0) return
-		const root = new TextDecoder().decode(r.stdout).trim()
-		if (!root) return
-		const parent = path.dirname(root)
-		const existing = process.env.NODE_PATH ?? ''
-		const sep = process.platform === 'win32' ? ';' : ':'
-		const parts = existing ? existing.split(sep) : []
-		if (!parts.includes(parent)) {
-			process.env.NODE_PATH = parts.length
-				? `${parts.join(sep)}${sep}${parent}`
-				: parent
-		}
-	} catch {
-		// npm not on PATH or spawn failed; the dynamic import will
-		// just report the SDK as missing, which the existing log
-		// lines already handle.
-	}
-}
 primeNodePath()
 
 // bootProgress(phase, message) — emits a single line on stderr in the
@@ -370,6 +335,44 @@ export async function startHost(
 					},
 					{ headers: { 'Access-Control-Allow-Origin': '*' } },
 				)
+			}
+			if (url.pathname.startsWith('/v1/')) {
+				if (state.secret && !checkRequestAuth(req, state.secret)) {
+					return unauthorizedResponse()
+				}
+				const targetUrl = `${openaiUrl}${url.pathname}${url.search}`
+				try {
+					const headers = new Headers(req.headers)
+					headers.delete('host')
+					headers.delete('connection')
+
+					const proxyRes = await fetch(targetUrl, {
+						method: req.method,
+						headers,
+						body: req.body,
+						redirect: 'follow',
+					})
+
+					return new Response(proxyRes.body, {
+						status: proxyRes.status,
+						headers: proxyRes.headers,
+					})
+				} catch (err) {
+					log.error(`Proxy to OpenAI endpoint failed: ${(err as Error).message}`)
+					return new Response(
+						JSON.stringify({
+							error: 'OpenAI endpoint unreachable',
+							details: (err as Error).message,
+						}),
+						{
+							status: 502,
+							headers: {
+								'Content-Type': 'application/json',
+								'Access-Control-Allow-Origin': '*',
+							},
+						},
+					)
+				}
 			}
 
 			return serveDashboard(req)

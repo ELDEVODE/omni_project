@@ -1,6 +1,6 @@
-import path from 'node:path'
 import { log } from './log.ts'
 import { makeConsumer, tryLoadQVAC } from './qvac/consumer.ts'
+import { primeNodePath } from './util.ts'
 
 export type ConsumerConfig = {
 	providerPublicKey: string
@@ -9,29 +9,6 @@ export type ConsumerConfig = {
 	secret?: string
 }
 
-function primeNodePath(): void {
-	try {
-		const r = Bun.spawnSync({
-			cmd: ['npm', 'root', '-g'],
-			env: process.env,
-			timeout: 3_000,
-		})
-		if (r.exitCode !== 0) return
-		const root = new TextDecoder().decode(r.stdout).trim()
-		if (!root) return
-		const parent = path.dirname(root)
-		const existing = process.env.NODE_PATH ?? ''
-		const sep = process.platform === 'win32' ? ';' : ':'
-		const parts = existing ? existing.split(sep) : []
-		if (!parts.includes(parent)) {
-			process.env.NODE_PATH = parts.length
-				? `${parts.join(sep)}${sep}${parent}`
-				: parent
-		}
-	} catch {
-		// best-effort
-	}
-}
 primeNodePath()
 
 function bootProgress(phase: string, message: string): void {

@@ -2,7 +2,7 @@ const HOST_URL: string =
 	(import.meta.env.VITE_HOST_URL as string | undefined) ?? ''
 
 export const SERVER_URL = HOST_URL
-const OPENAI_URL = `${SERVER_URL}/v1`
+const OPENAI_URL = '/v1'
 
 let bearerToken: string | null = null
 
