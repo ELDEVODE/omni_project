@@ -20,6 +20,7 @@ import type {
 } from '../types.ts'
 
 const PACKAGE = '@qvac/sdk'
+const CLI_PACKAGE = '@qvac/cli'
 
 function globalNodeModulesRoot(ctx: InstallContext): string | null {
 	// `npm root -g` prints the global node_modules directory. Run it
@@ -151,8 +152,8 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 		step: 'install',
 		percent: 15,
 		message: before.installed
-			? `updating ${PACKAGE} (have ${before.version ?? 'unknown'})`
-			: `installing ${PACKAGE} (npm install -g ${PACKAGE})`,
+			? `updating QVAC (have ${PACKAGE}@${before.version ?? 'unknown'})`
+			: `installing QVAC (npm install -g ${PACKAGE} ${CLI_PACKAGE})`,
 	}
 
 	// Use `npm install -g @qvac/sdk` so the dynamic import in the
@@ -160,8 +161,8 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 	// On Linux, elevate with sudo if we're not already root.
 	const cmd =
 		ctx.platform === 'linux'
-			? maybeSudo(npmCmd(ctx, 'install', '-g', PACKAGE), 'linux')
-			: npmCmd(ctx, 'install', '-g', PACKAGE)
+			? maybeSudo(npmCmd(ctx, 'install', '-g', PACKAGE, CLI_PACKAGE), 'linux')
+			: npmCmd(ctx, 'install', '-g', PACKAGE, CLI_PACKAGE)
 
 	const r = await runCommand(cmd, { timeoutMs: 600_000 }, ctx)
 	if (r.exitCode !== 0) {
@@ -176,7 +177,7 @@ async function* install(ctx: InstallContext): AsyncIterable<InstallEvent> {
 			kind: 'fail',
 			capability: 'qvac',
 			code: 'npm_install_failed',
-			message: `npm install -g ${PACKAGE} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 240)}`,
+			message: `npm install -g ${PACKAGE} ${CLI_PACKAGE} failed (exit ${r.exitCode}): ${r.stderr.slice(0, 240)}`,
 		}
 		return
 	}

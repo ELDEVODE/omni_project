@@ -25,12 +25,15 @@ function getInstallState(id: string): RunState | undefined {
 
 function commandExists(cmd: string): boolean {
 	const paths = (process.env.PATH ?? '').split(path.delimiter)
+	const exts = process.platform === 'win32' ? ['.cmd', '.exe', ''] : ['']
 	for (const dir of paths) {
-		const full = path.join(dir, cmd)
-		try {
-			fs.accessSync(full, fs.constants.X_OK)
-			return true
-		} catch {}
+		for (const ext of exts) {
+			const full = path.join(dir, cmd + ext)
+			try {
+				fs.accessSync(full, fs.constants.X_OK)
+				return true
+			} catch {}
+		}
 	}
 	return false
 }
@@ -214,6 +217,8 @@ export async function startHost(
 	let openaiServer: ReturnType<typeof spawn> | null = null
 	const openaiUrl = `http://127.0.0.1:${openaiPort}`
 
+	const qvacCmd = process.platform === 'win32' ? 'qvac.cmd' : 'qvac'
+
 	if (!commandExists('qvac')) {
 		log.warn(
 			'qvac binary not found in PATH — OpenAI-compat server disabled. Run `omni install qvac` to enable.',
@@ -223,7 +228,7 @@ export async function startHost(
 		bootProgress('openai', `spawning qvac serve openai on :${openaiPort}…`)
 		try {
 			openaiServer = spawn(
-				'qvac',
+				qvacCmd,
 				['serve', 'openai', '--port', String(openaiPort), '--cors'],
 				{
 					stdio: ['ignore', 'pipe', 'pipe'],
