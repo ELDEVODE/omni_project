@@ -8,16 +8,32 @@ let cachedSDK: QVACSDK | null | undefined = undefined
 
 function getGlobalRoot(): string | null {
 	try {
+		const cmd =
+			process.platform === 'win32'
+				? ['cmd.exe', '/c', 'npm', 'root', '-g']
+				: ['npm', 'root', '-g']
 		const r = Bun.spawnSync({
-			cmd: ['npm', 'root', '-g'],
+			cmd,
 			env: process.env,
 			timeout: 3_000,
 		})
-		if (r.exitCode !== 0) return null
-		return new TextDecoder().decode(r.stdout).trim() || null
+		if (r.exitCode === 0) {
+			const out = new TextDecoder().decode(r.stdout).trim()
+			if (out) return out
+		}
 	} catch {
+		// fall through
+	}
+
+	if (process.platform === 'win32') {
+		const appData = process.env.APPDATA
+		if (appData) return path.join(appData, 'npm', 'node_modules')
 		return null
 	}
+	if (process.platform === 'darwin') {
+		return '/usr/local/lib/node_modules'
+	}
+	return '/usr/lib/node_modules'
 }
 
 function getEntryPath(packageDir: string): string {
