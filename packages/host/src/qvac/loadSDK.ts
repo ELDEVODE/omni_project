@@ -23,7 +23,9 @@ function getGlobalRoot(): string | null {
 function getEntryPath(packageDir: string): string {
 	try {
 		const pkgJsonPath = path.join(packageDir, 'package.json')
-		const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as { main?: string }
+		const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
+			main?: string
+		}
 		const main = pkg.main || './dist/index.js'
 		return path.resolve(packageDir, main)
 	} catch {

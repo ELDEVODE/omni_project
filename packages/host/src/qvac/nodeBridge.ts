@@ -107,7 +107,7 @@ class NodeBridgeSDK implements QVACSDK {
 	private stderrBuf = ''
 	private started = false
 
-	constructor(private sdkImportPath: string = '@qvac/sdk') {}
+	constructor(private sdkImportPath = '@qvac/sdk') {}
 
 	async start(): Promise<boolean> {
 		if (this.proc) return true
@@ -319,7 +319,9 @@ class NodeBridgeSDK implements QVACSDK {
 	resume = undefined
 }
 
-export async function tryNodeBridge(sdkImportPath?: string): Promise<QVACSDK | null> {
+export async function tryNodeBridge(
+	sdkImportPath?: string,
+): Promise<QVACSDK | null> {
 	if (bridge) return bridge
 	try {
 		const b = new NodeBridgeSDK(sdkImportPath)
