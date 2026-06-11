@@ -4,7 +4,6 @@ import { log } from '../log.ts'
 import type {
 	QVACCompletionEvent,
 	QVACCompletionOptions,
-	QVACDelegate,
 	QVACHeartbeatOptions,
 	QVACLoadModelOptions,
 	QVACProviderHandle,
@@ -79,12 +78,6 @@ function bridgeScriptPath(): string {
 let bridge: NodeBridgeSDK | null = null
 let reqId = 0
 
-interface BridgeRequest {
-	id: number
-	m: string
-	p: unknown
-}
-
 interface BridgeResponse {
 	id: number
 	r: unknown
@@ -120,7 +113,16 @@ class NodeBridgeSDK implements QVACSDK {
 				stderr: 'inherit',
 				env: process.env,
 			})
-			const reader = this.proc.stdout.getReader()
+			const stdout = this.proc
+				.stdout as unknown as ReadableStream<Uint8Array> | null
+			if (!stdout) {
+				throw new Error('bridge stdout unavailable')
+			}
+			const reader = (
+				stdout as unknown as {
+					getReader: () => ReadableStreamDefaultReader<Uint8Array>
+				}
+			).getReader()
 			this.readLoop(reader)
 			const pong = await this.request('ping', null)
 			return pong === 'pong'
@@ -131,11 +133,14 @@ class NodeBridgeSDK implements QVACSDK {
 		}
 	}
 
-	private async readLoop(reader: ReadableStreamDefaultReader<Uint8Array>) {
+	private async readLoop(reader: {
+		read: () => Promise<{ done: boolean; value?: Uint8Array }>
+	}) {
 		try {
 			while (true) {
 				const { done, value } = await reader.read()
 				if (done) break
+				if (!value) continue
 				this.buf += new TextDecoder().decode(value)
 				const lines = this.buf.split('\n')
 				this.buf = lines.pop() || ''
@@ -161,10 +166,12 @@ class NodeBridgeSDK implements QVACSDK {
 			const id = ++reqId
 			this.pending.set(id, { resolve, reject })
 			const msg = `${JSON.stringify({ id, m: method, p: params })}\n`
-			if (this.proc?.stdin) {
-				const writer = this.proc.stdin.getWriter()
-				writer.write(new TextEncoder().encode(msg))
-				writer.releaseLock()
+			const stdin = this.proc?.stdin
+			if (stdin && typeof stdin !== 'number') {
+				// FileSink in Bun has its own .write() method
+				;(stdin as { write: (d: Uint8Array) => unknown }).write(
+					new TextEncoder().encode(msg),
+				)
 			} else {
 				this.pending.delete(id)
 				reject(new Error('bridge not running'))
@@ -181,10 +188,9 @@ class NodeBridgeSDK implements QVACSDK {
 	private cleanup() {
 		if (this.proc) {
 			try {
-				if (this.proc.stdin) {
-					const w = this.proc.stdin.getWriter()
-					w.close()
-					w.releaseLock()
+				const stdin = this.proc.stdin
+				if (stdin && typeof stdin !== 'number') {
+					;(stdin as { end?: () => void }).end?.()
 				}
 				this.proc.kill()
 			} catch {
