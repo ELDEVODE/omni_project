@@ -187,6 +187,5 @@ jobs:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || steps.get_version.outputs.version }}
           files: |
             artifacts/**/*
-            artifacts/checksums.txt
           generate_release_notes: true
           fail_on_unmatched_files: true
