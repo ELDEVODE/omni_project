@@ -1,0 +1,384 @@
+$ biome check .
+./packages/web/src/panels/VideoGenPanel.tsx:59:5 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    57 │ 					}}
+    58 │ 				/>
+  > 59 │ 				<button
+       │ 				^^^^^^^
+  > 60 │ 					onClick={run}
+        ...
+  > 73 │ 					}}
+  > 74 │ 				>
+       │ 				^
+    75 │ 					{running ? <Spinner size={11} /> : '▶'}
+    76 │ 					{running ? 'GENERATING' : 'GENERATE'}
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/panels/TranslatePanel.tsx:100:5 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+     98 │ 					))}
+     99 │ 				</select>
+  > 100 │ 				<button
+        │ 				^^^^^^^
+  > 101 │ 					onClick={run}
+         ...
+  > 114 │ 					}}
+  > 115 │ 				>
+        │ 				^
+    116 │ 					{running ? <Spinner size={11} /> : '▶ TRANSLATE'}
+    117 │ 					{running ? 'TRANSLATING' : ''}
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/panels/TranscribePanel.tsx:66:5 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    64 │ 			</p>
+    65 │ 			<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  > 66 │ 				<button
+       │ 				^^^^^^^
+  > 67 │ 					onClick={recording ? stop : start}
+        ...
+  > 78 │ 					}}
+  > 79 │ 				>
+       │ 				^
+    80 │ 					{recording ? '■ STOP' : '● RECORD'}
+    81 │ 				</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/installer/src/capabilities/bonjour.ts:21:90 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    19 │ 	try {
+    20 │ 		const fs = require('node:fs') as typeof import('node:fs')
+  > 21 │ 		const { createRequire } = require('node:module') as { createRequire: (path: string) => any }
+       │ 		                                                                                       ^^^
+    22 │ 		const req = createRequire(`${process.cwd()}/`)
+    23 │ 		const resolved = req.resolve('bonjour-service/package.json')
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+./packages/installer/src/capabilities/bonjour.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     19  19 │   	try {
+     20  20 │   		const fs = require('node:fs') as typeof import('node:fs')
+     21     │ - → → const·{·createRequire·}·=·require('node:module')·as·{·createRequire:·(path:·string)·=>·any·}
+         21 │ + → → const·{·createRequire·}·=·require('node:module')·as·{
+         22 │ + → → → createRequire:·(path:·string)·=>·any
+         23 │ + → → }
+     22  24 │   		const req = createRequire(`${process.cwd()}/`)
+     23  25 │   		const resolved = req.resolve('bonjour-service/package.json')
+  
+
+./packages/web/src/panels/SpeakPanel.tsx:64:5 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    62 │ 				style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}
+    63 │ 			>
+  > 64 │ 				<button
+       │ 				^^^^^^^
+  > 65 │ 					onClick={run}
+        ...
+  > 78 │ 					}}
+  > 79 │ 				>
+       │ 				^
+    80 │ 					{running ? <Spinner size={11} /> : '▶'}
+    81 │ 					{running ? 'SYNTHESIZING' : 'SPEAK'}
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/panels/ModelsPanel.tsx:174:5 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    172 │ 					QVAC MODEL REGISTRY
+    173 │ 				</h2>
+  > 174 │ 				<button
+        │ 				^^^^^^^
+  > 175 │ 					onClick={load}
+         ...
+  > 187 │ 					}}
+  > 188 │ 				>
+        │ 				^
+    189 │ 					{loading ? 'REFRESHING…' : 'REFRESH'}
+    190 │ 				</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/panels/ModelsPanel.tsx:348:4 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    346 │ 				</span>
+    347 │ 			</div>
+  > 348 │ 			<button
+        │ 			^^^^^^^
+  > 349 │ 				onClick={() => onDelete(model.id)}
+         ...
+  > 360 │ 				}}
+  > 361 │ 			>
+        │ 			^
+    362 │ 				UNLOAD
+    363 │ 			</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/panels/ModelsPanel.tsx:450:6 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    448 │ 					</div>
+    449 │ 				) : (
+  > 450 │ 					<button
+        │ 					^^^^^^^
+  > 451 │ 						onClick={() => onPull(model.alias)}
+         ...
+  > 461 │ 						}}
+  > 462 │ 					>
+        │ 					^
+    463 │ 						PULL
+    464 │ 					</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/App.tsx:187:6 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    185 │ 						}}
+    186 │ 					/>
+  > 187 │ 					<button
+        │ 					^^^^^^^
+  > 188 │ 						onClick={applyToken}
+         ...
+  > 197 │ 						}}
+  > 198 │ 					>
+        │ 					^
+    199 │ 						APPLY
+    200 │ 					</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/App.tsx:201:6 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    199 │ 						APPLY
+    200 │ 					</button>
+  > 201 │ 					<button
+        │ 					^^^^^^^
+  > 202 │ 						onClick={() => setTtsEnabled((v) => !v)}
+         ...
+  > 214 │ 						}}
+  > 215 │ 					>
+        │ 					^
+    216 │ 						{ttsEnabled ? <SpeakerOn s={12} /> : <SpeakerOff s={12} />}
+    217 │ 					</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/App.tsx:233:7 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Provide an explicit type prop for the button element.
+  
+    231 │ 				>
+    232 │ 					{PANEL_NAV_ORDER.map((id) => (
+  > 233 │ 						<button
+        │ 						^^^^^^^
+  > 234 │ 							key={id}
+         ...
+  > 253 │ 							title={PANEL_LABELS[id]}
+  > 254 │ 						>
+        │ 						^
+    255 │ 							{PANEL_LABELS[id]}
+    256 │ 						</button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+./packages/web/src/components/Icons.tsx:4:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+     3 │ export const Mic = ({ s = 16 }: IconProps) => (
+   > 4 │ 	<svg
+       │ 	^^^^
+   > 5 │ 		width={s}
+        ...
+  > 12 │ 		strokeLinejoin="round"
+  > 13 │ 	>
+       │ 	^
+    14 │ 		<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+    15 │ 		<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:22:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    21 │ export const Stop = ({ s = 14 }: IconProps) => (
+  > 22 │ 	<svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor">
+       │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    23 │ 		<rect x="3" y="3" width="18" height="18" rx="3" />
+    24 │ 	</svg>
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:28:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    27 │ export const SpeakerOn = ({ s = 15 }: IconProps) => (
+  > 28 │ 	<svg
+       │ 	^^^^
+  > 29 │ 		width={s}
+        ...
+  > 36 │ 		strokeLinejoin="round"
+  > 37 │ 	>
+       │ 	^
+    38 │ 		<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    39 │ 		<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:45:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    44 │ export const SpeakerOff = ({ s = 15 }: IconProps) => (
+  > 45 │ 	<svg
+       │ 	^^^^
+  > 46 │ 		width={s}
+        ...
+  > 53 │ 		strokeLinejoin="round"
+  > 54 │ 	>
+       │ 	^
+    55 │ 		<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    56 │ 		<line x1="23" y1="9" x2="17" y2="15" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:62:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    61 │ export const Send = ({ s = 15 }: IconProps) => (
+  > 62 │ 	<svg
+       │ 	^^^^
+  > 63 │ 		width={s}
+        ...
+  > 70 │ 		strokeLinejoin="round"
+  > 71 │ 	>
+       │ 	^
+    72 │ 		<line x1="22" y1="2" x2="11" y2="13" />
+    73 │ 		<polygon points="22 2 15 22 11 13 2 9 22 2" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:78:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    77 │ export const Cpu = ({ s = 13 }: IconProps) => (
+  > 78 │ 	<svg
+       │ 	^^^^
+  > 79 │ 		width={s}
+        ...
+  > 86 │ 		strokeLinejoin="round"
+  > 87 │ 	>
+       │ 	^
+    88 │ 		<rect x="4" y="4" width="16" height="16" rx="2" />
+    89 │ 		<rect x="9" y="9" width="6" height="6" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:102:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    101 │ export const Wifi = ({ s = 13 }: IconProps) => (
+  > 102 │ 	<svg
+        │ 	^^^^
+  > 103 │ 		width={s}
+         ...
+  > 110 │ 		strokeLinejoin="round"
+  > 111 │ 	>
+        │ 	^
+    112 │ 		<path d="M5 12.55a11 11 0 0 1 14.08 0" />
+    113 │ 		<path d="M1.42 9a16 16 0 0 1 21.16 0" />
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+./packages/web/src/components/Icons.tsx:120:2 lint/a11y/noSvgWithoutTitle ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Alternative text title element cannot be empty
+  
+    119 │ export const Zap = ({ s = 13 }: IconProps) => (
+  > 120 │ 	<svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor">
+        │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    121 │ 		<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    122 │ 	</svg>
+  
+  i For accessibility purposes, SVGs should have an alternative text, provided via title element. If the svg element has role="img", you should add the aria-label or aria-labelledby attribute.
+  
+
+The number of diagnostics exceeds the number allowed by Biome.
+Diagnostics not shown: 9.
+Checked 110 files in 61ms. No fixes applied.
+Found 1 error.
+Found 28 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+error: script "lint" exited with code 1
