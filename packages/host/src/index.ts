@@ -144,7 +144,8 @@ function handleHealth(provider: QVACProvider): Response {
 	)
 }
 
-const isCompiled = __dirname.includes('$bunfs') || __dirname.includes('snapshot')
+const isCompiled =
+	__dirname.includes('$bunfs') || __dirname.includes('snapshot')
 const DASHBOARD_DIR = isCompiled
 	? path.join(path.dirname(process.execPath), 'web')
 	: path.resolve(__dirname, '../../../web/dist')
