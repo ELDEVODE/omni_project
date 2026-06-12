@@ -65,10 +65,13 @@ jobs:
         run: |
           mkdir -p dist/${{ matrix.out }}
           bun build packages/cli/src/index.ts \
-            --target=bun-${{ matrix.target }} \
             --compile \
+            --target bun-${{ matrix.target }} \
             --external @qvac/sdk \
             --outfile=dist/${{ matrix.out }}/omni${{ matrix.target == 'windows-x64' && '.exe' || '' }}
+          
+          # Bundle the dashboard assets alongside the executable
+          cp -r packages/web/dist dist/${{ matrix.out }}/web
 
       - name: Package tarball/zip
         shell: bash

@@ -144,7 +144,10 @@ function handleHealth(provider: QVACProvider): Response {
 	)
 }
 
-const DASHBOARD_DIR = path.resolve(__dirname, '../../../web/dist')
+const isCompiled = __dirname.includes('$bunfs') || __dirname.includes('snapshot')
+const DASHBOARD_DIR = isCompiled
+	? path.join(path.dirname(process.execPath), 'web')
+	: path.resolve(__dirname, '../../../web/dist')
 
 function serveDashboard(req: Request): Response {
 	const url = new URL(req.url)
