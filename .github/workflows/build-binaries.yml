@@ -60,6 +60,9 @@ jobs:
       - name: Test
         run: bun test
 
+      - name: Build dashboard
+        run: bun run --cwd packages/web build
+
       - name: Build binary
         shell: bash
         run: |
@@ -69,7 +72,7 @@ jobs:
             --target bun-${{ matrix.target }} \
             --external @qvac/sdk \
             --outfile=dist/${{ matrix.out }}/omni${{ matrix.target == 'windows-x64' && '.exe' || '' }}
-          
+
           # Bundle the dashboard assets alongside the executable
           cp -r packages/web/dist dist/${{ matrix.out }}/web
 
