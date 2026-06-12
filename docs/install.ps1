@@ -212,6 +212,7 @@ try {
     $ExeName = "$Binary.exe"
     $ExtractedExe = Get-ChildItem -Path $ExtractDir -Filter $ExeName -Recurse | Select-Object -First 1
     if (-not $ExtractedExe) { throw "Archive did not contain $ExeName" }
+    $SourceDir = $ExtractedExe.Directory.FullName
 
     # ─── Install ────────────────────────────────────────────
     Start-Spinner 'installing'
@@ -219,8 +220,18 @@ try {
         if (-not (Test-Path $InstallDir)) {
             New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
         }
+        
+        # Check if omni is running and try to kill it, or fail gracefully
+        $runningProcs = Get-Process -Name "omni" -ErrorAction SilentlyContinue
+        if ($runningProcs) {
+            Stop-Spinner 'warn'
+            Write-Warning "omni is currently running. Attempting to close it..."
+            Stop-Process -Name "omni" -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+            Start-Spinner 'installing'
+        }
         $Target = Join-Path $InstallDir $ExeName
-        Copy-Item -Path $ExtractedExe.FullName -Destination $Target -Force
+        Copy-Item -Path "$SourceDir\*" -Destination $InstallDir -Recurse -Force
         Stop-Spinner 'done'
     } catch {
         Stop-Spinner 'fail'

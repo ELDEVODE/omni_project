@@ -264,11 +264,11 @@ if [ "$NEED_SUDO" -eq 1 ]; then
   fi
   echo "→ Installing to $INSTALL_DIR (sudo)"
   sudo mkdir -p "$INSTALL_DIR"
-  sudo cp "$BIN_PATH" "$INSTALL_DIR/${EXE}"
+  sudo cp -r "$TMP/${BINARY}-${OS}-${ARCH}/"* "$INSTALL_DIR/"
   sudo chmod +x "$INSTALL_DIR/${EXE}"
 else
   mkdir -p "$INSTALL_DIR"
-  cp "$BIN_PATH" "$INSTALL_DIR/${EXE}"
+  cp -r "$TMP/${BINARY}-${OS}-${ARCH}/"* "$INSTALL_DIR/"
   chmod +x "$INSTALL_DIR/${EXE}"
 fi
 
