@@ -2,10 +2,10 @@
   "name": "omnimesh",
   "version": "0.1.0",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.5.0",
     "@types/bun": "latest",
     "@types/qrcode": "^1.5.6",
-    "typescript": "^5.6.3"
+    "typescript": "^6.0.3"
   },
   "description": "Sovereign AI fabric — turn your LAN into a private AI cluster. One command to share compute across all your devices.",
   "engines": {
