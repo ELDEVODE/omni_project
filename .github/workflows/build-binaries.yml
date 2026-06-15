@@ -37,7 +37,7 @@ jobs:
             out: omni-windows-x64
             ext: zip
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Disable autocrlf
         run: git config --global core.autocrlf false
@@ -109,7 +109,7 @@ jobs:
           fi
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: omni-${{ matrix.out }}
           path: dist/${{ matrix.out }}.*
@@ -120,7 +120,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -144,7 +144,7 @@ jobs:
           cat checksums.txt
 
       - name: Upload checksums.txt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: omni-checksums
           path: artifacts/checksums.txt
@@ -157,7 +157,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Get version
         id: get_version
@@ -166,7 +166,7 @@ jobs:
           VERSION=$(jq -r .version package.json)
           echo "version=v$VERSION" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -188,7 +188,7 @@ jobs:
           ls -la
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || steps.get_version.outputs.version }}
           files: |
